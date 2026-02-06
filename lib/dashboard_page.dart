@@ -7,19 +7,28 @@ class DashboardPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.black87,
+        backgroundColor: Colors.white,
+        centerTitle: true,
         elevation: 0,
         title: Row(
-          children: const [
-            Icon(Icons.eco, color: Colors.green),
-            SizedBox(width: 8),
-            Text('AGRINOVA', style: TextStyle(fontWeight: FontWeight.bold)),
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.asset('assets/images/logo.png', height: 38),
+            SizedBox(width: 3),
+            Text(
+              'AGRINOVA',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 30),
+            ),
           ],
         ),
         actions: const [
           Padding(
             padding: EdgeInsets.only(right: 16),
-            child: Icon(Icons.notifications_none),
+            child: Icon(
+              Icons.circle_notifications_outlined,
+              size: 30,
+              color: Color(0xff03AF55),
+            ),
           ),
         ],
       ),
@@ -43,17 +52,20 @@ class DashboardPage extends StatelessWidget {
   // ================= PLANT INFO =================
   Widget _plantInfoCard() {
     return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      color: Color(0xffEFFAF5),
+      elevation: 10,
+      shadowColor: Colors.black.withValues(alpha: 0.25),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11)),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
           children: [
             Container(
-              width: 80,
-              height: 80,
+              width: 177,
+              height: 110,
               decoration: BoxDecoration(
-                color: Colors.green,
-                borderRadius: BorderRadius.circular(12),
+                color: Color(0xff03AF55),
+                borderRadius: BorderRadius.circular(11),
               ),
             ),
             const SizedBox(width: 16),
@@ -62,16 +74,32 @@ class DashboardPage extends StatelessWidget {
               children: const [
                 Text(
                   'Jenis Tanaman :',
-                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                  style: TextStyle(
+                    fontSize: 15,
+                    color: Colors.black,
+                    fontWeight: FontWeight.w400,
+                  ),
                 ),
                 Text(
                   'Selada Romaine',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
                 ),
                 SizedBox(height: 8),
                 Text(
-                  'HST : Hari ke-25',
-                  style: TextStyle(color: Colors.black87),
+                  'HST :',
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+                Text(
+                  'Hari ke-25',
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ],
             ),
@@ -89,6 +117,7 @@ class DashboardPage extends StatelessWidget {
       physics: const NeverScrollableScrollPhysics(),
       crossAxisSpacing: 12,
       mainAxisSpacing: 12,
+      childAspectRatio: 1.8, // 👈 INI KUNCINYA
       children: const [
         _SensorCard(
           title: 'Ketinggian Air',
@@ -145,7 +174,10 @@ class DashboardPage extends StatelessWidget {
   // ================= CHART =================
   Widget _chartPlaceholder() {
     return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      color: Color(0xffEFFAF5),
+      elevation: 10,
+      shadowColor: Colors.black.withValues(alpha: 0.25),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11)),
       child: Container(
         height: 160,
         padding: const EdgeInsets.all(16),
@@ -175,14 +207,17 @@ class DashboardPage extends StatelessWidget {
   // ================= FUZZY STATUS =================
   Widget _fuzzyStatusCard() {
     return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      color: Color(0xffEFFAF5),
+      elevation: 10,
+      shadowColor: Colors.black.withValues(alpha: 0.25),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11)),
       child: ListTile(
-        leading: const Icon(Icons.check_circle, color: Colors.green),
+        leading: const Icon(Icons.check_circle, color: Color(0xff03AF55)),
         title: const Text(
           'Status Sistem (Fuzzy)',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
-        subtitle: const Text('Optimal.\nTidak ada tindakan diperlukan.'),
+        subtitle: const Text('Optimal. Tidak ada tindakan diperlukan.'),
       ),
     );
   }
@@ -205,29 +240,58 @@ class _SensorCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      color: const Color(0xffEFFAF5),
+      elevation: 10,
+      shadowColor: Colors.black.withValues(alpha: 0.25),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11)),
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: Colors.green),
-            const SizedBox(height: 8),
+            // ===== TITLE (ATAS - TENGAH) =====
             Text(
               title,
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 12),
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
             ),
-            const SizedBox(height: 4),
-            Text(
-              value,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+
+            // ===== ICON + VALUE =====
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, size: 30, color: const Color(0xff03AF55)),
+                const SizedBox(width: 8),
+
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // VALUE
+                    Text(
+                      value,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+
+                    // STATUS (DI BAWAH VALUE)
+                    if (status.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 1),
+                        child: Text(
+                          status,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xff03AF55),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ],
             ),
-            if (status.isNotEmpty)
-              Text(
-                status,
-                style: const TextStyle(color: Colors.green, fontSize: 12),
-              ),
           ],
         ),
       ),

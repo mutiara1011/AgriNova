@@ -29,14 +29,28 @@ class _BottomNavState extends State<BottomNav> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: index,
         type: BottomNavigationBarType.fixed,
-        selectedItemColor: Colors.green,
+        selectedItemColor: Color(0xff03AF55),
         unselectedItemColor: Colors.grey,
+        showSelectedLabels: false,
+        showUnselectedLabels: false,
         onTap: (i) => setState(() => index = i),
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Dashboard'),
-          BottomNavigationBarItem(icon: Icon(Icons.tune), label: 'Kontrol'),
-          BottomNavigationBarItem(icon: Icon(Icons.psychology), label: 'Fuzzy'),
-          BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Setting'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home, size: 30),
+            label: 'Dashboard',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.tune, size: 30),
+            label: 'Kontrol',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.psychology, size: 30),
+            label: 'Fuzzy',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings, size: 30),
+            label: 'Setting',
+          ),
         ],
       ),
     );
