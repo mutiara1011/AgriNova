@@ -25,6 +25,7 @@ class _BottomNavState extends State<BottomNav> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       body: pages[index],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: index,

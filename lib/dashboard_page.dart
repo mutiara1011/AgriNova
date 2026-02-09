@@ -6,39 +6,15 @@ class DashboardPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        centerTitle: true,
-        elevation: 0,
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Image.asset('assets/images/logo.png', height: 38),
-            SizedBox(width: 3),
-            Text(
-              'AGRINOVA',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 30),
-            ),
-          ],
-        ),
-        actions: const [
-          Padding(
-            padding: EdgeInsets.only(right: 16),
-            child: Icon(
-              Icons.circle_notifications_outlined,
-              size: 30,
-              color: Color(0xff03AF55),
-            ),
-          ),
-        ],
-      ),
+      backgroundColor: Colors.white,
+      appBar: _appBar(),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            _plantInfoCard(),
+            _plantInfoCard(context),
             const SizedBox(height: 16),
-            _sensorGrid(),
+            _sensorGrid(context),
             const SizedBox(height: 16),
             _chartPlaceholder(),
             const SizedBox(height: 16),
@@ -49,59 +25,91 @@ class DashboardPage extends StatelessWidget {
     );
   }
 
+  // ================= APP BAR =================
+  AppBar _appBar() {
+    return AppBar(
+      backgroundColor: Colors.white,
+      centerTitle: true,
+      elevation: 0,
+      title: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Image.asset('assets/images/logo.png', height: 36),
+          const SizedBox(width: 6),
+          const Text(
+            'AGRINOVA',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 26,
+              color: Colors.black,
+            ),
+          ),
+        ],
+      ),
+      actions: const [
+        Padding(
+          padding: EdgeInsets.only(right: 16),
+          child: Icon(
+            Icons.circle_notifications_outlined,
+            size: 28,
+            color: Color(0xff03AF55),
+          ),
+        ),
+      ],
+    );
+  }
+
   // ================= PLANT INFO =================
-  Widget _plantInfoCard() {
+  Widget _plantInfoCard(BuildContext context) {
     return Card(
-      color: Color(0xffEFFAF5),
-      elevation: 10,
+      color: const Color(0xffEFFAF5),
+      elevation: 8,
       shadowColor: Colors.black.withValues(alpha: 0.25),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11)),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
           children: [
-            Container(
-              width: 177,
-              height: 110,
-              decoration: BoxDecoration(
-                color: Color(0xff03AF55),
-                borderRadius: BorderRadius.circular(11),
+            // KOTAK KIRI (RESPONSIVE)
+            Expanded(
+              flex: 2,
+              child: Container(
+                height: 110,
+                decoration: BoxDecoration(
+                  color: const Color(0xff03AF55),
+                  borderRadius: BorderRadius.circular(11),
+                ),
               ),
             ),
             const SizedBox(width: 16),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
-                Text(
-                  'Jenis Tanaman :',
-                  style: TextStyle(
-                    fontSize: 15,
-                    color: Colors.black,
-                    fontWeight: FontWeight.w400,
+
+            // TEKS KANAN
+            Expanded(
+              flex: 3,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: const [
+                  Text(
+                    'Jenis Tanaman :',
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w400),
                   ),
-                ),
-                Text(
-                  'Selada Romaine',
-                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
-                ),
-                SizedBox(height: 8),
-                Text(
-                  'HST :',
-                  style: TextStyle(
-                    color: Colors.black,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w400,
+                  Text(
+                    'Selada Romaine',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                   ),
-                ),
-                Text(
-                  'Hari ke-25',
-                  style: TextStyle(
-                    color: Colors.black,
-                    fontSize: 17,
-                    fontWeight: FontWeight.w600,
+                  SizedBox(height: 8),
+                  Text(
+                    'HST :',
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w400),
                   ),
-                ),
-              ],
+                  Text(
+                    'Hari ke-25',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -110,14 +118,17 @@ class DashboardPage extends StatelessWidget {
   }
 
   // ================= SENSOR GRID =================
-  Widget _sensorGrid() {
+  Widget _sensorGrid(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    final isSmall = width < 380;
+
     return GridView.count(
-      crossAxisCount: 2,
+      crossAxisCount: isSmall ? 1 : 2,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       crossAxisSpacing: 12,
       mainAxisSpacing: 12,
-      childAspectRatio: 1.8, // 👈 INI KUNCINYA
+      childAspectRatio: isSmall ? 1.4 : 1.6,
       children: const [
         _SensorCard(
           title: 'Ketinggian Air',
@@ -174,31 +185,33 @@ class DashboardPage extends StatelessWidget {
   // ================= CHART =================
   Widget _chartPlaceholder() {
     return Card(
-      color: Color(0xffEFFAF5),
-      elevation: 10,
+      color: const Color(0xffEFFAF5),
+      elevation: 8,
       shadowColor: Colors.black.withValues(alpha: 0.25),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11)),
-      child: Container(
+      child: SizedBox(
         height: 160,
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: const [
-            Text(
-              'Grafik Sensor',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 12),
-            Expanded(
-              child: Center(
-                child: Text(
-                  'Grafik TDS / pH / Suhu\n(placeholder)',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.grey),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: const [
+              Text(
+                'Grafik Sensor',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 12),
+              Expanded(
+                child: Center(
+                  child: Text(
+                    'Grafik TDS / pH / Suhu\n(placeholder)',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.black),
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -207,17 +220,17 @@ class DashboardPage extends StatelessWidget {
   // ================= FUZZY STATUS =================
   Widget _fuzzyStatusCard() {
     return Card(
-      color: Color(0xffEFFAF5),
-      elevation: 10,
+      color: const Color(0xffEFFAF5),
+      elevation: 8,
       shadowColor: Colors.black.withValues(alpha: 0.25),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11)),
-      child: ListTile(
-        leading: const Icon(Icons.check_circle, color: Color(0xff03AF55)),
-        title: const Text(
+      child: const ListTile(
+        leading: Icon(Icons.check_circle, color: Color(0xff03AF55)),
+        title: Text(
           'Status Sistem (Fuzzy)',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
-        subtitle: const Text('Optimal. Tidak ada tindakan diperlukan.'),
+        subtitle: Text('Optimal. Tidak ada tindakan diperlukan.'),
       ),
     );
   }
@@ -241,7 +254,7 @@ class _SensorCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       color: const Color(0xffEFFAF5),
-      elevation: 10,
+      elevation: 8,
       shadowColor: Colors.black.withValues(alpha: 0.25),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11)),
       child: Padding(
@@ -249,46 +262,47 @@ class _SensorCard extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // ===== TITLE (ATAS - TENGAH) =====
             Text(
               title,
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
             ),
-
-            // ===== ICON + VALUE =====
+            const SizedBox(height: 6),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(icon, size: 30, color: const Color(0xff03AF55)),
+                Icon(icon, size: 28, color: const Color(0xff03AF55)),
                 const SizedBox(width: 8),
 
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // VALUE
-                    Text(
-                      value,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
+                // ⬇️ INI KUNCINYA
+                Flexible(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        value,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
-                    ),
-
-                    // STATUS (DI BAWAH VALUE)
-                    if (status.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 1),
-                        child: Text(
+                      if (status.isNotEmpty)
+                        Text(
                           status,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w500,
                             color: Color(0xff03AF55),
                           ),
                         ),
-                      ),
-                  ],
+                    ],
+                  ),
                 ),
               ],
             ),
