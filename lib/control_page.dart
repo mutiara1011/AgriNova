@@ -10,7 +10,9 @@ class ControlPage extends StatefulWidget {
 }
 
 class _ControlPageState extends State<ControlPage> {
-  // ===== STATE LOKAL (MANUAL MODE) =====
+  bool pompa = true;
+  bool aerator = true;
+  bool kipas = false;
   bool lampu = true;
 
   bool autoPompa = true;
@@ -18,7 +20,7 @@ class _ControlPageState extends State<ControlPage> {
   bool autoAerator = true;
 
   double tdsValue = 800;
-  double suhuTarget = 32;
+  int suhuTarget = 32;
   int durasiAerator = 2;
 
   @override
@@ -26,12 +28,15 @@ class _ControlPageState extends State<ControlPage> {
     final fuzzy = context.watch<FuzzyController>();
 
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        centerTitle: true,
         title: const Text(
           'KONTROL',
-          style: TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
         ),
-        centerTitle: true,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -39,62 +44,91 @@ class _ControlPageState extends State<ControlPage> {
           children: [
             _warningCard(),
             const SizedBox(height: 16),
-            _switchControlCard(fuzzy),
+            _switchCard(fuzzy),
             const SizedBox(height: 16),
-            _pompaTdsCard(fuzzy),
+            _pompaCard(fuzzy),
             const SizedBox(height: 16),
             _kipasCard(fuzzy),
             const SizedBox(height: 16),
-            _aeratorScheduleCard(fuzzy),
+            _aeratorCard(fuzzy),
           ],
         ),
       ),
     );
   }
 
-  // ================= SWITCH =================
-  Widget _switchControlCard(FuzzyController fuzzy) {
+  // ================= SWITCH CARD =================
+  Widget _switchCard(FuzzyController fuzzy) {
     return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      color: const Color(0xffEFFAF5),
+      elevation: 8,
+      shadowColor: Colors.black.withValues(alpha: 0.25),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Column(
         children: [
-          SwitchListTile(
-            title: const Text('Pompa Nutrisi'),
-            subtitle: Text(fuzzy.autoMode ? 'Dikontrol Fuzzy' : 'Manual'),
-            value: fuzzy.autoMode ? fuzzy.pompaAktif : !autoPompa,
-            onChanged: fuzzy.autoMode
-                ? null
-                : (v) {
-                    setState(() => autoPompa = !v);
-                  },
+          _switchTile(
+            'Pompa Nutrisi',
+            pompa,
+            (v) => setState(() => pompa = v),
+            fuzzy.autoMode,
           ),
-          const Divider(height: 1),
-          SwitchListTile(
-            title: const Text('Kipas Ruangan'),
-            subtitle: Text(fuzzy.autoMode ? 'Dikontrol Fuzzy' : 'Manual'),
-            value: fuzzy.autoMode ? fuzzy.kipasAktif : !autoKipas,
-            onChanged: fuzzy.autoMode
-                ? null
-                : (v) {
-                    setState(() => autoKipas = !v);
-                  },
+          const Divider(thickness: 1.2),
+          _switchTile(
+            'Aerator',
+            aerator,
+            (v) => setState(() => aerator = v),
+            fuzzy.autoMode,
           ),
-          const Divider(height: 1),
-          SwitchListTile(
-            title: const Text('Aerator'),
-            subtitle: Text(fuzzy.autoMode ? 'Dikontrol Fuzzy' : 'Manual'),
-            value: fuzzy.autoMode ? fuzzy.aeratorAktif : !autoAerator,
-            onChanged: fuzzy.autoMode
-                ? null
-                : (v) {
-                    setState(() => autoAerator = !v);
-                  },
+          const Divider(thickness: 1.2),
+          _switchTile(
+            'Kipas Ruangan',
+            kipas,
+            (v) => setState(() => kipas = v),
+            fuzzy.autoMode,
           ),
-          const Divider(height: 1),
-          SwitchListTile(
-            title: const Text('Lampu'),
-            value: lampu,
-            onChanged: (v) => setState(() => lampu = v),
+          const Divider(thickness: 1.2),
+          _switchTile(
+            'Lampu',
+            lampu,
+            (v) => setState(() => lampu = v),
+            fuzzy.autoMode,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _switchTile(
+    String title,
+    bool value,
+    Function(bool) onChanged,
+    bool disabled,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              title,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: disabled ? Colors.grey : Colors.black,
+              ),
+            ),
+          ),
+          Switch(
+            value: value,
+            onChanged: disabled ? null : onChanged,
+            thumbColor: WidgetStateProperty.all(Colors.white),
+            trackColor: WidgetStateProperty.resolveWith((states) {
+              if (states.contains(WidgetState.selected)) {
+                return const Color(0xff03AF55);
+              }
+              return const Color(0xff767A78);
+            }),
+            trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
           ),
         ],
       ),
@@ -102,29 +136,30 @@ class _ControlPageState extends State<ControlPage> {
   }
 
   // ================= POMPA =================
-  Widget _pompaTdsCard(FuzzyController fuzzy) {
+  Widget _pompaCard(FuzzyController fuzzy) {
     return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      color: const Color(0xffEFFAF5),
+      elevation: 8,
+      shadowColor: Colors.black.withValues(alpha: 0.25),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _autoHeader(
               'Pompa Nutrisi (TDS)',
               autoPompa,
-              fuzzy.autoMode,
               (v) => setState(() => autoPompa = v),
+              fuzzy.autoMode,
             ),
             Slider(
               value: tdsValue,
               min: 500,
               max: 1200,
-              divisions: 14,
-              activeColor: Colors.green,
-              onChanged: (!autoPompa && !fuzzy.autoMode)
-                  ? (v) => setState(() => tdsValue = v)
-                  : null,
+              activeColor: const Color(0xff03AF55),
+              onChanged: (autoPompa || fuzzy.autoMode)
+                  ? null
+                  : (v) => setState(() => tdsValue = v),
             ),
             Align(
               alignment: Alignment.centerRight,
@@ -139,31 +174,26 @@ class _ControlPageState extends State<ControlPage> {
   // ================= KIPAS =================
   Widget _kipasCard(FuzzyController fuzzy) {
     return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      color: const Color(0xffEFFAF5),
+      elevation: 8,
+      shadowColor: Colors.black.withValues(alpha: 0.25),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _autoHeader(
               'Kipas Pendingin',
               autoKipas,
-              fuzzy.autoMode,
               (v) => setState(() => autoKipas = v),
+              fuzzy.autoMode,
             ),
-            Slider(
-              value: suhuTarget,
-              min: 20,
-              max: 40,
-              divisions: 20,
-              activeColor: Colors.green,
-              onChanged: (!autoKipas && !fuzzy.autoMode)
-                  ? (v) => setState(() => suhuTarget = v)
-                  : null,
-            ),
-            Align(
-              alignment: Alignment.centerRight,
-              child: Text('${suhuTarget.toInt()} °C'),
+            const SizedBox(height: 10),
+            TextField(
+              enabled: !autoKipas && !fuzzy.autoMode,
+              decoration: const InputDecoration(border: OutlineInputBorder()),
+              controller: TextEditingController(text: suhuTarget.toString()),
+              onChanged: (v) => suhuTarget = int.tryParse(v) ?? suhuTarget,
             ),
           ],
         ),
@@ -172,27 +202,30 @@ class _ControlPageState extends State<ControlPage> {
   }
 
   // ================= AERATOR =================
-  Widget _aeratorScheduleCard(FuzzyController fuzzy) {
+  Widget _aeratorCard(FuzzyController fuzzy) {
     return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      color: const Color(0xffEFFAF5),
+      elevation: 8,
+      shadowColor: Colors.black.withValues(alpha: 0.25),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _autoHeader(
-              'Jadwal Aerator',
+              'Jadwal Aerator Harian',
               autoAerator,
-              fuzzy.autoMode,
               (v) => setState(() => autoAerator = v),
+              fuzzy.autoMode,
             ),
-            DropdownButton<int>(
-              value: durasiAerator,
+            const SizedBox(height: 8),
+            DropdownButtonFormField<int>(
+              initialValue: durasiAerator,
               items: [1, 2, 3, 4]
                   .map((e) => DropdownMenuItem(value: e, child: Text('$e jam')))
                   .toList(),
               onChanged: (!autoAerator && !fuzzy.autoMode)
-                  ? (v) => setState(() => durasiAerator = v!)
+                  ? (v) => setState(() => durasiAerator = v ?? durasiAerator)
                   : null,
             ),
           ],
@@ -201,40 +234,64 @@ class _ControlPageState extends State<ControlPage> {
     );
   }
 
+  // ================= AUTO HEADER =================
   Widget _autoHeader(
     String title,
-    bool autoValue,
-    bool fuzzyAuto,
+    bool value,
     Function(bool) onChanged,
+    bool fuzzyAuto,
   ) {
     return Row(
       children: [
-        Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+        Text(
+          title,
+          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+        ),
         const Spacer(),
-        const Text('Auto'),
-        Switch(
-          value: autoValue,
-          onChanged: fuzzyAuto ? null : onChanged,
-          activeThumbColor: Colors.green,
+        GestureDetector(
+          onTap: fuzzyAuto ? null : () => onChanged(!value),
+          child: Row(
+            children: [
+              Container(
+                width: 10,
+                height: 10,
+                decoration: BoxDecoration(
+                  color: fuzzyAuto
+                      ? Colors.grey.shade400
+                      : (value ? const Color(0xff03AF55) : Colors.grey),
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                'Auto',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: fuzzyAuto ? Colors.grey : Colors.black,
+                ),
+              ),
+            ],
+          ),
         ),
       ],
     );
   }
 
+  // ================= WARNING =================
   Widget _warningCard() {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.red,
+        color: const Color(0xffD32F2F),
         borderRadius: BorderRadius.circular(12),
       ),
       child: const Row(
         children: [
-          Icon(Icons.warning, color: Colors.white),
+          Icon(Icons.warning_amber_rounded, color: Colors.white, size: 34),
           SizedBox(width: 8),
           Expanded(
             child: Text(
-              'PERINGATAN: Ketinggian air kritis!\nSegera isi tangki',
+              'PERINGATAN : Ketinggian air Kritis!\nSegera Isi Tangki',
               style: TextStyle(color: Colors.white),
             ),
           ),
