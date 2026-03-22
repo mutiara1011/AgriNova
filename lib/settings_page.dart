@@ -10,24 +10,15 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  // Switch states
   bool notifikasi = true;
   bool modeGelap = false;
-  bool modeFuzzy = true;
-
-  // Fuzzy interval
   int intervalFuzzy = 5;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'PENGATURAN',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        centerTitle: true,
-      ),
+      backgroundColor: Colors.white,
+      appBar: _appBar(),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -49,114 +40,107 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  // ================= UMUM =================
+  // ================= APP BAR =================
+  AppBar _appBar() {
+    return AppBar(
+      backgroundColor: Colors.white,
+      elevation: 0,
+      centerTitle: true,
+      title: const Text(
+        'PENGATURAN',
+        style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
+      ),
+    );
+  }
+
+  // ================= GENERAL =================
   Widget _generalCard() {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+    return _baseCard(
       child: Column(
         children: [
-          ListTile(
-            title: const Text('Bahasa'),
-            trailing: const Text('Indonesia'),
-            onTap: () {},
+          _tile('Bahasa', trailing: 'Indonesia'),
+          const Divider(thickness: 1),
+          _switchTile(
+            'Notifikasi',
+            notifikasi,
+            (v) => setState(() => notifikasi = v),
           ),
-          const Divider(height: 1),
-          SwitchListTile(
-            title: const Text('Notifikasi'),
-            value: notifikasi,
-            activeThumbColor: Colors.green,
-            onChanged: (v) {
-              setState(() => notifikasi = v);
-            },
-          ),
-          const Divider(height: 1),
-          SwitchListTile(
-            title: const Text('Mode Gelap'),
-            value: modeGelap,
-            activeThumbColor: Colors.green,
-            onChanged: (v) {
-              setState(() => modeGelap = v);
-            },
+          const Divider(thickness: 1),
+          _switchTile(
+            'Mode Gelap',
+            modeGelap,
+            (v) => setState(() => modeGelap = v),
           ),
         ],
       ),
     );
   }
 
-  // ================= MODE SISTEM =================
+  // ================= MODE SYSTEM =================
   Widget _modeSystemCard() {
     final fuzzy = context.watch<FuzzyController>();
 
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: SwitchListTile(
-        title: const Text(
-          'Mode Otomatis (Fuzzy Mamdani)',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        subtitle: Text(
-          fuzzy.autoMode
-              ? 'Sistem dikontrol otomatis oleh fuzzy'
-              : 'Sistem dikontrol manual oleh pengguna',
-        ),
-        value: fuzzy.autoMode,
-        activeThumbColor: Colors.green,
-        onChanged: (v) {
-          context.read<FuzzyController>().setAutoMode(v);
-        },
+    return _baseCard(
+      child: _switchTile(
+        'Mode Otomatis (Fuzzy)',
+        fuzzy.autoMode,
+        (v) => context.read<FuzzyController>().setAutoMode(v),
+        subtitle: fuzzy.autoMode
+            ? 'Dikontrol otomatis oleh fuzzy'
+            : 'Dikontrol manual oleh pengguna',
       ),
     );
   }
 
-  // ================= INTERVAL FUZZY =================
+  // ================= INTERVAL =================
   Widget _intervalFuzzyCard() {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'EKSEKUSI FUZZY',
-              style: TextStyle(fontWeight: FontWeight.bold),
+    return _baseCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'EKSEKUSI FUZZY',
+            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+          ),
+          const SizedBox(height: 8),
+          DropdownButtonFormField<int>(
+            initialValue: intervalFuzzy,
+            decoration: InputDecoration(
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 10,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderSide: const BorderSide(color: Color(0xff03AF55)),
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
-            const SizedBox(height: 8),
-            DropdownButton<int>(
-              value: intervalFuzzy,
-              isExpanded: true,
-              items: const [
-                DropdownMenuItem(value: 5, child: Text('Setiap 5 menit')),
-                DropdownMenuItem(value: 10, child: Text('Setiap 10 menit')),
-                DropdownMenuItem(value: 30, child: Text('Setiap 30 menit')),
-              ],
-              onChanged: (v) {
-                setState(() => intervalFuzzy = v!);
-              },
-            ),
-          ],
-        ),
+            items: const [
+              DropdownMenuItem(value: 5, child: Text('Setiap 5 menit')),
+              DropdownMenuItem(value: 10, child: Text('Setiap 10 menit')),
+              DropdownMenuItem(value: 30, child: Text('Setiap 30 menit')),
+            ],
+            onChanged: (v) => setState(() => intervalFuzzy = v!),
+          ),
+        ],
       ),
     );
   }
 
-  // ================= SAFETY LIMIT =================
+  // ================= SAFETY =================
   Widget _safetyLimitCard() {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+    return _baseCard(
       child: Column(
         children: const [
-          ListTile(title: Text('pH Minimum'), trailing: Text('5.5')),
-          Divider(height: 1),
-          ListTile(title: Text('pH Maksimum'), trailing: Text('7.5')),
-          Divider(height: 1),
-          ListTile(title: Text('TDS Maksimum'), trailing: Text('1200 PPM')),
-          Padding(
-            padding: EdgeInsets.all(12),
-            child: Text(
-              'Jika nilai melebihi batas, sistem akan masuk mode aman.',
-              style: TextStyle(fontSize: 12, color: Colors.grey),
-            ),
+          _ListItem('pH Minimum', '5.5'),
+          Divider(thickness: 1),
+          _ListItem('pH Maksimum', '7.5'),
+          Divider(thickness: 1),
+          _ListItem('TDS Maksimum', '1200 PPM'),
+          SizedBox(height: 8),
+          Text(
+            'Jika melebihi batas, sistem masuk mode aman',
+            style: TextStyle(fontSize: 12, color: Colors.grey),
           ),
         ],
       ),
@@ -165,20 +149,16 @@ class _SettingsPageState extends State<SettingsPage> {
 
   // ================= TANAMAN =================
   Widget _plantSettingCard() {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+    return _baseCard(
       child: Column(
         children: const [
-          ListTile(
-            title: Text('Jenis Tanaman'),
-            trailing: Text('Selada Romaine'),
-          ),
-          Divider(height: 1),
-          ListTile(title: Text('Umur Tanam'), trailing: Text('25 HST')),
-          Divider(height: 1),
-          ListTile(title: Text('pH Ideal'), trailing: Text('5.5 – 6.5')),
-          Divider(height: 1),
-          ListTile(title: Text('TDS Ideal'), trailing: Text('700 – 900')),
+          _ListItem('Jenis Tanaman', 'Selada Romaine'),
+          Divider(thickness: 1),
+          _ListItem('Umur Tanam', '25 HST'),
+          Divider(thickness: 1),
+          _ListItem('pH Ideal', '5.5 – 6.5'),
+          Divider(thickness: 1),
+          _ListItem('TDS Ideal', '700 – 900'),
         ],
       ),
     );
@@ -186,14 +166,101 @@ class _SettingsPageState extends State<SettingsPage> {
 
   // ================= ABOUT =================
   Widget _aboutCard() {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+    return _baseCard(
       child: const ListTile(
-        title: Text('Tentang Aplikasi'),
-        subtitle: Text(
-          'Aplikasi Monitoring dan Kontrol Nutrisi Hidroponik '
-          'menggunakan Pendekatan Fuzzy Mamdani.',
+        leading: Icon(Icons.info, color: Color(0xff03AF55)),
+        title: Text(
+          'Tentang Aplikasi',
+          style: TextStyle(fontWeight: FontWeight.w600),
         ),
+        subtitle: Text(
+          'Monitoring & kontrol hidroponik berbasis Fuzzy Mamdani.',
+        ),
+      ),
+    );
+  }
+
+  // ================= COMPONENT =================
+
+  Widget _baseCard({required Widget child}) {
+    return Card(
+      color: const Color(0xffEFFAF5),
+      elevation: 8,
+      shadowColor: Colors.black.withValues(alpha: 0.25),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11)),
+      child: Padding(padding: const EdgeInsets.all(16), child: child),
+    );
+  }
+
+  Widget _tile(String title, {String? trailing}) {
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+      trailing: trailing != null ? Text(trailing) : null,
+    );
+  }
+
+  Widget _switchTile(
+    String title,
+    bool value,
+    Function(bool) onChanged, {
+    String? subtitle,
+  }) {
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            Switch(
+              value: value,
+              onChanged: onChanged,
+              thumbColor: WidgetStateProperty.all(Colors.white),
+              trackColor: WidgetStateProperty.resolveWith((states) {
+                if (states.contains(WidgetState.selected)) {
+                  return const Color(0xff03AF55);
+                }
+                return const Color(0xff767A78);
+              }),
+              trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
+            ),
+          ],
+        ),
+        if (subtitle != null)
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              subtitle,
+              style: const TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+// ================= REUSABLE ITEM =================
+class _ListItem extends StatelessWidget {
+  final String title;
+  final String value;
+
+  const _ListItem(this.title, this.value);
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      title: Text(title),
+      trailing: Text(
+        value,
+        style: const TextStyle(fontWeight: FontWeight.w600),
       ),
     );
   }

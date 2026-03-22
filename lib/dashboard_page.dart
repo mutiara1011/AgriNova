@@ -1,7 +1,51 @@
 import 'package:flutter/material.dart';
+import 'package:fl_chart/fl_chart.dart';
+import 'detail_chart_page.dart';
+import 'notification_page.dart';
+import 'dart:async';
 
-class DashboardPage extends StatelessWidget {
-  const DashboardPage({super.key});
+class DashboardPage extends StatefulWidget {
+  final Function(int) onTabChange;
+
+  const DashboardPage({super.key, required this.onTabChange});
+
+  @override
+  State<DashboardPage> createState() => _DashboardPageState();
+}
+
+class _DashboardPageState extends State<DashboardPage> {
+  final PageController controller = PageController();
+  double getWidth(BuildContext context) => MediaQuery.of(context).size.width;
+  double getHeight(BuildContext context) => MediaQuery.of(context).size.height;
+  late Timer timer;
+  int currentIndex = 0;
+  final int chartsLength = 6;
+
+  @override
+  void initState() {
+    super.initState();
+
+    timer = Timer.periodic(const Duration(seconds: 5), (Timer timer) {
+      if (currentIndex < chartsLength - 1) {
+        currentIndex++;
+      } else {
+        currentIndex = 0;
+      }
+
+      controller.animateToPage(
+        currentIndex,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    timer.cancel();
+    controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -16,9 +60,9 @@ class DashboardPage extends StatelessWidget {
             const SizedBox(height: 16),
             _sensorGrid(context),
             const SizedBox(height: 16),
-            _chartPlaceholder(),
+            _chartSlider(context),
             const SizedBox(height: 16),
-            _fuzzyStatusCard(),
+            _fuzzyStatusCard(context),
           ],
         ),
       ),
@@ -46,13 +90,21 @@ class DashboardPage extends StatelessWidget {
           ),
         ],
       ),
-      actions: const [
+      actions: [
         Padding(
-          padding: EdgeInsets.only(right: 16),
-          child: Icon(
-            Icons.circle_notifications_outlined,
-            size: 28,
-            color: Color(0xff03AF55),
+          padding: const EdgeInsets.only(right: 16),
+          child: GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => NotificationPage()),
+              );
+            },
+            child: const Icon(
+              Icons.circle_notifications_outlined,
+              size: 28,
+              color: Color(0xff03AF55),
+            ),
           ),
         ),
       ],
@@ -76,8 +128,29 @@ class DashboardPage extends StatelessWidget {
               child: Container(
                 height: 110,
                 decoration: BoxDecoration(
-                  color: const Color(0xff03AF55),
                   borderRadius: BorderRadius.circular(11),
+                ),
+                child: Stack(
+                  children: [
+                    // GAMBAR
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(11),
+                      child: Image.asset(
+                        'assets/images/selada_romaine.jpg',
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        height: double.infinity,
+                      ),
+                    ),
+
+                    // OVERLAY HIJAU (BIAR MATCH TEMA)
+                    Container(
+                      decoration: BoxDecoration(
+                        color: const Color(0xff03AF55).withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(11),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -183,57 +256,276 @@ class DashboardPage extends StatelessWidget {
   }
 
   // ================= CHART =================
-  Widget _chartPlaceholder() {
+  Widget _chartSlider(BuildContext context) {
+    final charts = [
+      chartItem("NUTRISI", "Grafik TDS", "850 PPM", Colors.green),
+      chartItem("KEASAMAN", "Grafik PH", "6.2 pH", Colors.pink),
+      chartItem("ATMOSFER", "Grafik Suhu Ruangan", "28°C", Colors.blue),
+      chartItem("UDARA", "Kelembapan Ruangan", "65%", Colors.blueGrey),
+      chartItem("RESERVOIR", "Grafik Suhu Air", "24°C", Colors.green),
+      chartItem("FOTOSINTESIS", "Intensitas Cahaya", "1200 Lux", Colors.blue),
+    ];
+
     return Card(
       color: const Color(0xffEFFAF5),
       elevation: 8,
       shadowColor: Colors.black.withValues(alpha: 0.25),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11)),
-      child: SizedBox(
-        height: 160,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
-              Text(
-                'Grafik Sensor',
-                style: TextStyle(fontWeight: FontWeight.bold),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            SizedBox(
+              height: 200,
+              child: PageView.builder(
+                controller: controller,
+                itemCount: charts.length,
+                onPageChanged: (index) {
+                  setState(() {
+                    currentIndex = index;
+                  });
+
+                  timer.cancel();
+
+                  Future.delayed(const Duration(seconds: 3), () {
+                    timer = Timer.periodic(const Duration(seconds: 5), (
+                      Timer timer,
+                    ) {
+                      if (currentIndex < charts.length - 1) {
+                        currentIndex++;
+                      } else {
+                        currentIndex = 0;
+                      }
+
+                      controller.animateToPage(
+                        currentIndex,
+                        duration: const Duration(milliseconds: 500),
+                        curve: Curves.easeInOut,
+                      );
+                    });
+                  });
+                },
+                itemBuilder: (context, index) {
+                  return charts[index];
+                },
               ),
-              SizedBox(height: 12),
-              Expanded(
-                child: Center(
-                  child: Text(
-                    'Grafik TDS / pH / Suhu\n(placeholder)',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.black),
+            ),
+
+            const SizedBox(height: 10),
+
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(charts.length, (index) {
+                return Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                  width: currentIndex == index ? 10 : 6,
+                  height: 6,
+                  decoration: BoxDecoration(
+                    color: currentIndex == index
+                        ? const Color(0xff03AF55)
+                        : Colors.grey.shade400,
+                    borderRadius: BorderRadius.circular(10),
                   ),
+                );
+              }),
+            ),
+
+            // BUTTON DETAIL
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => DetailChartPage()),
+                  );
+                },
+                child: const Text(
+                  "Lihat Detail",
+                  style: TextStyle(color: Color(0xff03AF55)),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 
   // ================= FUZZY STATUS =================
-  Widget _fuzzyStatusCard() {
-    return Card(
-      color: const Color(0xffEFFAF5),
-      elevation: 8,
-      shadowColor: Colors.black.withValues(alpha: 0.25),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11)),
-      child: const ListTile(
-        leading: Icon(Icons.check_circle, color: Color(0xff03AF55)),
-        title: Text(
-          'Status Sistem (Fuzzy)',
-          style: TextStyle(fontWeight: FontWeight.bold),
+  Widget _fuzzyStatusCard(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    return GestureDetector(
+      onTap: () {
+        widget.onTabChange(2);
+      },
+      child: Container(
+        width: double.infinity,
+        padding: EdgeInsets.all(width * 0.04),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xff1B8E3E), Color(0xff03AF55)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.2),
+              blurRadius: 10,
+              offset: const Offset(0, 6),
+            ),
+          ],
         ),
-        subtitle: Text('Optimal. Tidak ada tindakan diperlukan.'),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // HEADER
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.psychology,
+                    color: Colors.white,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                const Text(
+                  "LOGIKA FUZZY",
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    letterSpacing: 1,
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 14),
+
+            // STATUS
+            const Text(
+              "Status Nutrisi Saat Ini",
+              style: TextStyle(color: Colors.white70, fontSize: 14),
+            ),
+
+            const SizedBox(height: 4),
+
+            const Text(
+              "Optimal",
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 26,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            // PROGRESS BAR
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: LinearProgressIndicator(
+                value: 0.85,
+                minHeight: 8,
+                backgroundColor: Colors.white24,
+                valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            // DESKRIPSI
+            const Text(
+              "Sistem menyesuaikan konsentrasi PPM secara otomatis untuk pertumbuhan maksimal.",
+              style: TextStyle(color: Colors.white70, fontSize: 13),
+            ),
+          ],
+        ),
       ),
     );
   }
+}
+
+Widget chartItem(String label, String title, String value, Color color) {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      // HEADER
+      Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(fontSize: 11, color: Colors.grey),
+              ),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              value,
+              style: TextStyle(color: color, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+
+      const SizedBox(height: 16),
+
+      // GRAFIK
+      SizedBox(
+        height: 120,
+        child: LineChart(
+          LineChartData(
+            gridData: const FlGridData(show: false),
+            borderData: FlBorderData(show: false),
+            titlesData: FlTitlesData(show: false),
+            lineBarsData: [
+              LineChartBarData(
+                isCurved: true,
+                color: color,
+                barWidth: 3,
+                spots: [
+                  FlSpot(0, 2),
+                  FlSpot(1, 3),
+                  FlSpot(2, 2.5),
+                  FlSpot(3, 4),
+                  FlSpot(4, 1.5),
+                  FlSpot(5, 3),
+                ],
+                belowBarData: BarAreaData(
+                  show: true,
+                  color: color.withValues(alpha: 0.2),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ],
+  );
 }
 
 // ================= SENSOR CARD =================

@@ -15,22 +15,22 @@ class BottomNav extends StatefulWidget {
 class _BottomNavState extends State<BottomNav> {
   int index = 0;
 
-  final pages = const [
-    DashboardPage(),
-    ControlPage(),
-    FuzzyPage(),
-    SettingsPage(),
-  ];
-
   @override
   Widget build(BuildContext context) {
+    final pages = [
+      DashboardPage(onTabChange: (i) => setState(() => index = i)),
+      const ControlPage(),
+      const FuzzyPage(),
+      const SettingsPage(),
+    ];
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: pages[index],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: index,
         type: BottomNavigationBarType.fixed,
-        selectedItemColor: Color(0xff03AF55),
+        selectedItemColor: const Color(0xff03AF55),
         unselectedItemColor: Colors.grey,
         showSelectedLabels: false,
         showUnselectedLabels: false,
