@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'detail_chart_page.dart';
-import 'notification_page.dart';
+import 'notification/notification_page.dart';
+import 'dummy_data.dart';
 import 'dart:async';
+import 'package:provider/provider.dart';
+import 'fuzzy/fuzzy_controller.dart';
 
 class DashboardPage extends StatefulWidget {
   final Function(int) onTabChange;
@@ -25,18 +28,27 @@ class _DashboardPageState extends State<DashboardPage> {
   void initState() {
     super.initState();
 
-    timer = Timer.periodic(const Duration(seconds: 5), (Timer timer) {
-      if (currentIndex < chartsLength - 1) {
-        currentIndex++;
-      } else {
-        currentIndex = 0;
-      }
+    timer = Timer.periodic(const Duration(seconds: 5), (_) {
+      if (!mounted) return;
 
-      controller.animateToPage(
-        currentIndex,
-        duration: const Duration(milliseconds: 500),
-        curve: Curves.easeInOut,
-      );
+      // update data
+      setState(() {});
+      context.read<FuzzyController>().updateFromSensor();
+
+      // AUTO SLIDE
+      if (controller.hasClients) {
+        currentIndex++;
+
+        if (currentIndex >= chartsLength) {
+          currentIndex = 0;
+        }
+
+        controller.animateToPage(
+          currentIndex,
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.easeInOut,
+        );
+      }
     });
   }
 
@@ -161,13 +173,13 @@ class _DashboardPageState extends State<DashboardPage> {
               flex: 3,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
+                children: [
                   Text(
                     'Jenis Tanaman :',
                     style: TextStyle(fontSize: 14, fontWeight: FontWeight.w400),
                   ),
                   Text(
-                    'Selada Romaine',
+                    DummyData.plantName,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
@@ -178,7 +190,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     style: TextStyle(fontSize: 14, fontWeight: FontWeight.w400),
                   ),
                   Text(
-                    'Hari ke-25',
+                    'Hari ke-${DummyData.hst}',
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                   ),
                 ],
@@ -202,52 +214,59 @@ class _DashboardPageState extends State<DashboardPage> {
       crossAxisSpacing: 12,
       mainAxisSpacing: 12,
       childAspectRatio: isSmall ? 1.4 : 1.6,
-      children: const [
+      children: [
         _SensorCard(
           title: 'Ketinggian Air',
-          value: '12 cm',
+          value: '${DummyData.ketinggianAir.toStringAsFixed(1)} cm',
           status: 'Normal',
           icon: Icons.water,
         ),
+
         _SensorCard(
           title: 'Kelembapan Ruangan',
-          value: '75%',
+          value: '${DummyData.kelembapan.toInt()}%',
           status: '',
           icon: Icons.water_drop,
         ),
+
         _SensorCard(
           title: 'Suhu Air',
-          value: '24°C',
+          value: '${DummyData.suhuAir.toStringAsFixed(1)}°C',
           status: '',
           icon: Icons.thermostat,
         ),
+
         _SensorCard(
           title: 'Suhu Ruangan',
-          value: '24°C',
+          value: '${DummyData.suhu.toStringAsFixed(1)}°C',
           status: '',
           icon: Icons.device_thermostat,
         ),
+
         _SensorCard(
           title: 'pH Sensor',
-          value: '6.2',
+          value: DummyData.ph.toStringAsFixed(1),
           status: '',
           icon: Icons.science,
         ),
+
         _SensorCard(
           title: 'TDS Sensor',
-          value: '850 PPM',
+          value: '${DummyData.tds.toInt()} PPM',
           status: '',
           icon: Icons.speed,
         ),
+
         _SensorCard(
           title: 'Intensitas Cahaya',
-          value: '1500 Lux',
+          value: '${DummyData.cahaya.toInt()} Lux',
           status: '',
           icon: Icons.light_mode,
         ),
+
         _SensorCard(
           title: 'Indikator Cuaca',
-          value: 'Hujan',
+          value: DummyData.cuaca,
           status: '',
           icon: Icons.cloud,
         ),
@@ -258,14 +277,49 @@ class _DashboardPageState extends State<DashboardPage> {
   // ================= CHART =================
   Widget _chartSlider(BuildContext context) {
     final charts = [
-      chartItem("NUTRISI", "Grafik TDS", "850 PPM", Colors.green),
-      chartItem("KEASAMAN", "Grafik PH", "6.2 pH", Colors.pink),
-      chartItem("ATMOSFER", "Grafik Suhu Ruangan", "28°C", Colors.blue),
-      chartItem("UDARA", "Kelembapan Ruangan", "65%", Colors.blueGrey),
-      chartItem("RESERVOIR", "Grafik Suhu Air", "24°C", Colors.green),
-      chartItem("FOTOSINTESIS", "Intensitas Cahaya", "1200 Lux", Colors.blue),
+      chartItem(
+        "NUTRISI",
+        "Grafik TDS",
+        "${DummyData.tds.toInt()} PPM",
+        Colors.green,
+        DummyData.tdsChart(),
+      ),
+      chartItem(
+        "KEASAMAN",
+        "Grafik PH",
+        DummyData.ph.toStringAsFixed(1),
+        Colors.pink,
+        DummyData.phChart(),
+      ),
+      chartItem(
+        "ATMOSFER",
+        "Suhu",
+        "${DummyData.suhu.toStringAsFixed(1)}°C",
+        Colors.blue,
+        DummyData.suhuChart(),
+      ),
+      chartItem(
+        "UDARA",
+        "Kelembapan",
+        "${DummyData.kelembapan.toInt()}%",
+        Colors.blueGrey,
+        DummyData.kelembapanChart(),
+      ),
+      chartItem(
+        "RESERVOIR",
+        "Suhu Air",
+        "${DummyData.suhuAir.toStringAsFixed(1)}°C",
+        Colors.green,
+        DummyData.suhuAirChart(),
+      ),
+      chartItem(
+        "FOTOSINTESIS",
+        "Cahaya",
+        "${DummyData.cahaya.toInt()} Lux",
+        Colors.orange,
+        DummyData.cahayaChart(),
+      ),
     ];
-
     return Card(
       color: const Color(0xffEFFAF5),
       elevation: 8,
@@ -283,26 +337,6 @@ class _DashboardPageState extends State<DashboardPage> {
                 onPageChanged: (index) {
                   setState(() {
                     currentIndex = index;
-                  });
-
-                  timer.cancel();
-
-                  Future.delayed(const Duration(seconds: 3), () {
-                    timer = Timer.periodic(const Duration(seconds: 5), (
-                      Timer timer,
-                    ) {
-                      if (currentIndex < charts.length - 1) {
-                        currentIndex++;
-                      } else {
-                        currentIndex = 0;
-                      }
-
-                      controller.animateToPage(
-                        currentIndex,
-                        duration: const Duration(milliseconds: 500),
-                        curve: Curves.easeInOut,
-                      );
-                    });
                   });
                 },
                 itemBuilder: (context, index) {
@@ -454,7 +488,13 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 }
 
-Widget chartItem(String label, String title, String value, Color color) {
+Widget chartItem(
+  String label,
+  String title,
+  String value,
+  Color color,
+  List<FlSpot> data,
+) {
   return Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
@@ -496,28 +536,93 @@ Widget chartItem(String label, String title, String value, Color color) {
 
       // GRAFIK
       SizedBox(
-        height: 120,
+        height: 130,
         child: LineChart(
           LineChartData(
-            gridData: const FlGridData(show: false),
+            minX: -1,
+            maxX: 25,
+            clipData: FlClipData.none(),
+
+            // GRID TIPIS
+            gridData: FlGridData(
+              show: true,
+              drawVerticalLine: true,
+              horizontalInterval: 1,
+              verticalInterval: 4,
+              getDrawingHorizontalLine: (value) {
+                return FlLine(
+                  color: Colors.grey.withValues(alpha: 0.1),
+                  strokeWidth: 1,
+                );
+              },
+              getDrawingVerticalLine: (value) {
+                return FlLine(
+                  color: Colors.grey.withValues(alpha: 0.1),
+                  strokeWidth: 1,
+                );
+              },
+            ),
+
+            // AXIS BAWAH (JAM)
+            titlesData: FlTitlesData(
+              leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              rightTitles: AxisTitles(
+                sideTitles: SideTitles(showTitles: false),
+              ),
+              bottomTitles: AxisTitles(
+                sideTitles: SideTitles(
+                  showTitles: true,
+                  interval: 4,
+                  reservedSize: 22,
+                  getTitlesWidget: (value, meta) {
+                    // hanya tampilkan tiap 4 jam
+                    if (value % 4 != 0) {
+                      return const SizedBox();
+                    }
+
+                    final hour = value.toInt().toString().padLeft(2, '0');
+
+                    return Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: Text(
+                        "$hour:00",
+                        style: const TextStyle(fontSize: 10),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+
             borderData: FlBorderData(show: false),
-            titlesData: FlTitlesData(show: false),
+
             lineBarsData: [
               LineChartBarData(
                 isCurved: true,
                 color: color,
                 barWidth: 3,
-                spots: [
-                  FlSpot(0, 2),
-                  FlSpot(1, 3),
-                  FlSpot(2, 2.5),
-                  FlSpot(3, 4),
-                  FlSpot(4, 1.5),
-                  FlSpot(5, 3),
-                ],
+
+                // DATA
+                spots: data,
+
+                // AREA BAWAH
                 belowBarData: BarAreaData(
                   show: true,
-                  color: color.withValues(alpha: 0.2),
+                  color: color.withValues(alpha: 0.15),
+                ),
+
+                // DOT TITIK
+                dotData: FlDotData(
+                  show: true,
+                  getDotPainter: (spot, percent, bar, index) {
+                    return FlDotCirclePainter(
+                      radius: 3,
+                      color: color,
+                      strokeWidth: 1,
+                      strokeColor: Colors.white,
+                    );
+                  },
                 ),
               ),
             ],

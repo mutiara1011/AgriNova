@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'fuzzy_controller.dart';
+import 'fuzzy/fuzzy_controller.dart';
+import 'dummy_data.dart';
+import 'dart:async';
+import '../notification/notification_controller.dart';
+import '../notification/notification_widget.dart';
 
 class ControlPage extends StatefulWidget {
   const ControlPage({super.key});
@@ -19,9 +23,31 @@ class _ControlPageState extends State<ControlPage> {
   bool autoKipas = true;
   bool autoAerator = true;
 
-  double tdsValue = 800;
-  int suhuTarget = 32;
+  double tdsValue = DummyData.tds;
+  int suhuTarget = DummyData.suhu.toInt();
   int durasiAerator = 2;
+
+  late Timer timer;
+
+  @override
+  void initState() {
+    super.initState();
+
+    timer = Timer.periodic(const Duration(seconds: 3), (_) {
+      if (!mounted) return;
+
+      setState(() {
+        tdsValue = DummyData.tds;
+        suhuTarget = DummyData.suhu.toInt();
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    timer.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -42,7 +68,7 @@ class _ControlPageState extends State<ControlPage> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            _warningCard(),
+            _warningCard(context),
             const SizedBox(height: 16),
             _switchCard(fuzzy),
             const SizedBox(height: 16),
@@ -192,7 +218,9 @@ class _ControlPageState extends State<ControlPage> {
             TextField(
               enabled: !autoKipas && !fuzzy.autoMode,
               decoration: const InputDecoration(border: OutlineInputBorder()),
-              controller: TextEditingController(text: suhuTarget.toString()),
+              controller: TextEditingController(
+                text: DummyData.suhu.toStringAsFixed(1),
+              ),
               onChanged: (v) => suhuTarget = int.tryParse(v) ?? suhuTarget,
             ),
           ],
@@ -278,25 +306,15 @@ class _ControlPageState extends State<ControlPage> {
   }
 
   // ================= WARNING =================
-  Widget _warningCard() {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: const Color(0xffD32F2F),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: const Row(
-        children: [
-          Icon(Icons.warning_amber_rounded, color: Colors.white, size: 34),
-          SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              'PERINGATAN : Ketinggian air Kritis!\nSegera Isi Tangki',
-              style: TextStyle(color: Colors.white),
-            ),
-          ),
-        ],
-      ),
-    );
+  Widget _warningCard(BuildContext context) {
+    final notif = context.watch<NotificationController>();
+
+    if (notif.notifications.isEmpty) {
+      return const SizedBox();
+    }
+
+    final latest = notif.notifications.first;
+
+    return NotificationCard(notif: latest);
   }
 }

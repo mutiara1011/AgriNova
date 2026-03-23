@@ -1,13 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
+import 'dummy_data.dart';
 import 'bottom_nav.dart';
-import 'fuzzy_controller.dart';
+import 'fuzzy/fuzzy_controller.dart';
+import 'notification/notification_controller.dart';
 
 void main() {
+  DummyData.start();
+
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => FuzzyController()..evaluateFuzzy(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => NotificationController()),
+        ChangeNotifierProxyProvider<NotificationController, FuzzyController>(
+          create: (_) => FuzzyController(NotificationController()),
+          update: (_, notif, __) => FuzzyController(notif),
+        ),
+      ],
       child: const MyApp(),
     ),
   );

@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dashboard_page.dart';
+import 'dummy_data.dart';
+import 'package:fl_chart/fl_chart.dart';
+import 'dart:async';
 
 // ================= MODEL =================
 class ChartData {
@@ -12,8 +15,31 @@ class ChartData {
 }
 
 // ================= PAGE =================
-class DetailChartPage extends StatelessWidget {
+class DetailChartPage extends StatefulWidget {
   const DetailChartPage({super.key});
+
+  @override
+  State<DetailChartPage> createState() => _DetailChartPageState();
+}
+
+class _DetailChartPageState extends State<DetailChartPage> {
+  late Timer timer;
+
+  @override
+  void initState() {
+    super.initState();
+
+    timer = Timer.periodic(const Duration(seconds: 3), (_) {
+      if (!mounted) return;
+      setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    timer.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -21,12 +47,42 @@ class DetailChartPage extends StatelessWidget {
 
     // DATA CHART (FLEKSIBEL)
     final charts = [
-      ChartData("NUTRISI", "Grafik TDS", "850 PPM", Colors.green),
-      ChartData("KEASAMAN", "Grafik PH", "6.2 pH", Colors.pink),
-      ChartData("ATMOSFER", "Grafik Suhu Ruangan", "28°C", Colors.blue),
-      ChartData("UDARA", "Kelembapan Ruangan", "65%", Colors.blueGrey),
-      ChartData("RESERVOIR", "Grafik Suhu Air", "24°C", Colors.green),
-      ChartData("FOTOSINTESIS", "Intensitas Cahaya", "1200 Lux", Colors.orange),
+      ChartData(
+        "NUTRISI",
+        "Grafik TDS",
+        "${DummyData.tds.toInt()} PPM",
+        Colors.green,
+      ),
+      ChartData(
+        "KEASAMAN",
+        "Grafik PH",
+        DummyData.ph.toStringAsFixed(1),
+        Colors.pink,
+      ),
+      ChartData(
+        "ATMOSFER",
+        "Grafik Suhu Ruangan",
+        "${DummyData.suhu.toStringAsFixed(1)}°C",
+        Colors.blue,
+      ),
+      ChartData(
+        "UDARA",
+        "Kelembapan Ruangan",
+        "${DummyData.kelembapan.toInt()}%",
+        Colors.blueGrey,
+      ),
+      ChartData(
+        "RESERVOIR",
+        "Grafik Suhu Air",
+        "${DummyData.suhuAir.toStringAsFixed(1)}°C",
+        Colors.green,
+      ),
+      ChartData(
+        "FOTOSINTESIS",
+        "Intensitas Cahaya",
+        "${DummyData.cahaya.toInt()} Lux",
+        Colors.orange,
+      ),
     ];
 
     return Scaffold(
@@ -49,7 +105,13 @@ class DetailChartPage extends StatelessWidget {
                 padding: const EdgeInsets.only(bottom: 16),
                 child: _chartWrapper(
                   context,
-                  chartItem(c.label, c.title, c.value, c.color),
+                  chartItem(
+                    c.label,
+                    c.title,
+                    c.value,
+                    c.color,
+                    _getChartData(c.label),
+                  ),
                   height,
                 ),
               );
@@ -58,6 +120,25 @@ class DetailChartPage extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  List<FlSpot> _getChartData(String label) {
+    switch (label) {
+      case "NUTRISI":
+        return DummyData.tdsChart();
+      case "KEASAMAN":
+        return DummyData.phChart();
+      case "ATMOSFER":
+        return DummyData.suhuChart();
+      case "UDARA":
+        return DummyData.kelembapanChart();
+      case "RESERVOIR":
+        return DummyData.suhuAirChart();
+      case "FOTOSINTESIS":
+        return DummyData.cahayaChart();
+      default:
+        return DummyData.tdsChart();
+    }
   }
 
   // ================= WRAPPER CARD =================
@@ -77,9 +158,13 @@ class DetailChartPage extends StatelessWidget {
       ),
 
       // ⬇️ RESPONSIVE HEIGHT
-      child: SizedBox(
-        height: height * 0.25, // 25% layar
-        child: chart,
+      child: Column(
+        children: [
+          SizedBox(
+            height: height * 0.22, // sedikit dikurangi biar muat label
+            child: chart,
+          ),
+        ],
       ),
     );
   }

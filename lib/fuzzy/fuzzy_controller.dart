@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
+import '../dummy_data.dart';
+import '../notification/notification_controller.dart';
+import '../notification/notification_model.dart';
 
 class FuzzyController extends ChangeNotifier {
+  final NotificationController notificationController;
+
+  FuzzyController(this.notificationController);
   // SENSOR (dummy)
   double ph = 6.2;
   double tds = 800;
@@ -8,11 +14,49 @@ class FuzzyController extends ChangeNotifier {
   // MODE
   bool autoMode = true;
 
+  bool airKritisSent = false;
+  bool phWarningSent = false;
+
   // OUTPUT FUZZY
   bool pompaAktif = false;
   bool kipasAktif = false;
   bool aeratorAktif = false;
   String rekomendasi = 'Tidak diperlukan tindakan';
+
+  void updateFromSensor() {
+    DummyData.update();
+
+    ph = DummyData.ph;
+    tds = DummyData.tds;
+
+    evaluateFuzzy();
+
+    if (DummyData.ketinggianAir < 9 && !airKritisSent) {
+      notificationController.addNotification(
+        "Air Kritis",
+        "Segera isi tangki!",
+        NotificationType.warning,
+      );
+      airKritisSent = true;
+    }
+
+    if (DummyData.ketinggianAir >= 9) {
+      airKritisSent = false;
+    }
+
+    if ((DummyData.ph < 5.8 || DummyData.ph > 7.2) && !phWarningSent) {
+      notificationController.addNotification(
+        "pH Tidak Normal",
+        "Nilai pH di luar batas ideal",
+        NotificationType.warning,
+      );
+      phWarningSent = true;
+    }
+
+    if (DummyData.ph >= 5.8 && DummyData.ph <= 7.2) {
+      phWarningSent = false;
+    }
+  }
 
   void evaluateFuzzy() {
     if (!autoMode) return;
