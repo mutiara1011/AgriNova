@@ -70,6 +70,8 @@ class _FuzzyStatusCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final fuzzy = context.watch<FuzzyController>();
+
     return Card(
       color: const Color(0xffEFFAF5),
       elevation: 8,
@@ -78,7 +80,7 @@ class _FuzzyStatusCard extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
-          children: const [
+          children: [
             Text(
               'STATUS EVALUASI FUZZY',
               style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
@@ -87,8 +89,18 @@ class _FuzzyStatusCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                _Gauge(label: 'pH', value: '6.2', status: 'Optimal'),
-                _Gauge(label: 'TDS', value: '800', status: 'Optimal'),
+                _Gauge(
+                  label: 'pH',
+                  value: fuzzy.ph.toStringAsFixed(1),
+                  status: fuzzy.statusPh,
+                ),
+                _Gauge(
+                  label: 'TDS',
+                  value: fuzzy.tds.toStringAsFixed(0),
+                  status: fuzzy.muTdsTinggi > fuzzy.muTdsRendah
+                      ? "Tinggi"
+                      : "Rendah",
+                ),
               ],
             ),
           ],
@@ -137,18 +149,21 @@ class _ConditionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final fuzzy = context.watch<FuzzyController>(); // 🔥 TAMBAH INI
+
     return _baseCard(
-      child: const Column(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
+          const Text(
             'KONDISI SAAT INI',
             style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
           ),
-          SizedBox(height: 8),
-          Text('• pH Air : Normal'),
-          Text('• Nutrisi (TDS) : Normal'),
-          Text('• Sistem : Stabil'),
+          const SizedBox(height: 8),
+
+          Text('• pH Air : ${fuzzy.statusPh}'), // 🔥 DINAMIS
+          Text('• Nutrisi (TDS) : ${fuzzy.tds.toStringAsFixed(0)}'),
+          Text('• Sistem : ${fuzzy.rekomendasi}'),
         ],
       ),
     );
@@ -161,32 +176,199 @@ class _ConditionCard extends StatelessWidget {
 class _MembershipCard extends StatelessWidget {
   const _MembershipCard();
 
+  String getStatus(FuzzyController fuzzy) {
+    if (fuzzy.muPhRendah > fuzzy.muPhNormal &&
+        fuzzy.muPhRendah > fuzzy.muPhTinggi) {
+      return "Asam";
+    } else if (fuzzy.muPhNormal > fuzzy.muPhTinggi) {
+      return "Normal";
+    } else {
+      return "Basa";
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final fuzzy = context.watch<FuzzyController>();
+    final ph = fuzzy.ph;
+
+    final status = getStatus(fuzzy);
+    final membership = fuzzy.muPhNormal;
+
     return _baseCard(
-      child: SizedBox(
-        height: 150,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: const [
-            Text(
-              'MEMBERSHIP FUNCTION',
-              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
-            ),
-            SizedBox(height: 12),
-            Expanded(
-              child: Center(
-                child: Text(
-                  'Grafik Membership\n(placeholder)',
-                  textAlign: TextAlign.center,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // HEADER
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Membership Function',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xff03AF55),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Text(
+                  'Live Data',
+                  style: TextStyle(color: Colors.white, fontSize: 12),
                 ),
               ),
+            ],
+          ),
+
+          const SizedBox(height: 4),
+          const Text(
+            'PARAMETER: PH AIR',
+            style: TextStyle(fontSize: 12, color: Colors.grey),
+          ),
+
+          const SizedBox(height: 16),
+
+          // 🔥 GRAFIK SEDERHANA (CUSTOM PAINTER)
+          SizedBox(
+            height: 80,
+            width: double.infinity,
+            child: CustomPaint(painter: _MembershipPainter(ph)),
+          ),
+
+          const SizedBox(height: 8),
+
+          // LABEL BAWAH
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '${fuzzy.muPhRendah.toStringAsFixed(2)} (Rendah)',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 10),
+              ),
+              Text(
+                '${fuzzy.muPhNormal.toStringAsFixed(2)} (Normal)',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 10),
+              ),
+              Text(
+                '${fuzzy.muPhTinggi.toStringAsFixed(2)} (Tinggi)',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 10),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 12),
+
+          // STATUS
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
             ),
-          ],
-        ),
+            child: Text(
+              'Status Dominan: $status',
+              style: const TextStyle(
+                color: Color(0xff03AF55),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 8),
+
+          // NILAI INPUT
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              '${ph.toStringAsFixed(1)} pH',
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
+
+          const SizedBox(height: 8),
+
+          // DERAJAT KEANGGOTAAN
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              '${membership.toStringAsFixed(2)} µ(x)',
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
+        ],
       ),
     );
   }
+}
+
+class _MembershipPainter extends CustomPainter {
+  final double ph;
+  _MembershipPainter(this.ph);
+  @override
+  void paint(Canvas canvas, Size size) {
+    final pointPaint = Paint()
+      ..color = Colors.black
+      ..style = PaintingStyle.fill;
+
+    double x = (ph / 14) * size.width;
+    double y = size.height * 0.5;
+
+    final paintLow = Paint()
+      ..color = Colors.red.withValues(alpha: 0.3)
+      ..style = PaintingStyle.fill;
+
+    final paintMid = Paint()
+      ..color = Colors.green.withValues(alpha: 0.3)
+      ..style = PaintingStyle.fill;
+
+    final paintHigh = Paint()
+      ..color = Colors.blue.withValues(alpha: 0.3)
+      ..style = PaintingStyle.fill;
+
+    // LOW
+    final low = Path()
+      ..moveTo(0, size.height)
+      ..lineTo(size.width * 0.3, size.height)
+      ..lineTo(size.width * 0.2, 0)
+      ..close();
+
+    // MID
+    final mid = Path()
+      ..moveTo(size.width * 0.2, size.height)
+      ..lineTo(size.width * 0.5, 0)
+      ..lineTo(size.width * 0.8, size.height)
+      ..close();
+
+    // HIGH
+    final high = Path()
+      ..moveTo(size.width * 0.7, size.height)
+      ..lineTo(size.width, size.height)
+      ..lineTo(size.width * 0.8, 0)
+      ..close();
+
+    canvas.drawPath(low, paintLow);
+    canvas.drawPath(mid, paintMid);
+    canvas.drawPath(high, paintHigh);
+    canvas.drawCircle(Offset(x, y), 4, pointPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 //
@@ -197,24 +379,145 @@ class _RuleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final fuzzy = context.watch<FuzzyController>();
+
     return _baseCard(
-      child: const Column(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'RULE FUZZY',
+          const Text(
+            'Inferensi Rule Mamdani',
             style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
           ),
-          SizedBox(height: 8),
-          Text('IF pH = Normal'),
-          Text('AND TDS = Normal'),
-          Text('THEN'),
-          Text('• Pompa Nutrisi : Mati'),
-          Text('• Aerator : Normal'),
+
+          const SizedBox(height: 16),
+
+          // R1 (AKTIF)
+          _ruleItem(
+            label: 'R1',
+            isActive: fuzzy.r1Active,
+            content: Wrap(
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 4,
+              runSpacing: 4,
+              children: [
+                const Text('IF pH adalah'),
+                _chip('Normal', Colors.green),
+                const Text('DAN TDS adalah'),
+                _chip('Rendah', Colors.green),
+                _chip('Tinggi', Colors.red),
+                const Text('THEN Dosis Pompa'),
+                _chip('Sedang', Colors.grey),
+              ],
+            ),
+
+            fireValue: fuzzy.r1.toStringAsFixed(2),
+          ),
+
+          const SizedBox(height: 12),
+
+          // R2 (TIDAK AKTIF)
+          _ruleItem(
+            label: 'R2',
+            isActive: fuzzy.r2 > 0,
+            content: const Text(
+              'IF pH rendah DAN TDS rendah THEN Dosis Pompa tinggi',
+            ),
+            fireValue: fuzzy.r2.toStringAsFixed(2),
+          ),
+
+          const SizedBox(height: 12),
+
+          _ruleItem(
+            label: 'R3',
+            isActive: fuzzy.r3Active,
+            content: const Text(
+              'IF pH tinggi DAN TDS tinggi THEN Dosis Pompa rendah',
+            ),
+            fireValue: fuzzy.r3.toStringAsFixed(2),
+          ),
         ],
       ),
     );
   }
+}
+
+Widget _ruleItem({
+  required String label,
+  required bool isActive,
+  required Widget content,
+  String? fireValue,
+}) {
+  return Opacity(
+    opacity: isActive ? 1 : 0.5,
+    child: Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xffF5F5F5),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // LABEL R1 / R2
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: isActive
+                  ? const Color(0xff03AF55).withValues(alpha: 0.15)
+                  : Colors.grey.withValues(alpha: 0.2),
+              shape: BoxShape.circle,
+            ),
+            child: Text(
+              label,
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: isActive ? const Color(0xff03AF55) : Colors.grey,
+              ),
+            ),
+          ),
+
+          const SizedBox(width: 12),
+
+          // CONTENT
+          Expanded(child: content),
+
+          // FIRE VALUE
+          if (fireValue != null)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: const Color(0xff03AF55).withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                'FIRE: $fireValue',
+                style: const TextStyle(
+                  color: Color(0xff03AF55),
+                  fontWeight: FontWeight.w600,
+                  fontSize: 12,
+                ),
+              ),
+            ),
+        ],
+      ),
+    ),
+  );
+}
+
+Widget _chip(String text, Color color) {
+  return Container(
+    margin: const EdgeInsets.symmetric(horizontal: 4),
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+    decoration: BoxDecoration(
+      color: color.withValues(alpha: 0.15),
+      borderRadius: BorderRadius.circular(6),
+    ),
+    child: Text(
+      text,
+      style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w600),
+    ),
+  );
 }
 
 //
@@ -241,7 +544,9 @@ class _RecommendationCard extends StatelessWidget {
           'REKOMENDASI',
           style: TextStyle(fontWeight: FontWeight.w600),
         ),
-        subtitle: Text(fuzzy.rekomendasi),
+        subtitle: Text(
+          '${fuzzy.rekomendasi} (${fuzzy.outputPompa.toStringAsFixed(1)})',
+        ),
       ),
     );
   }
@@ -256,20 +561,122 @@ class _HistoryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _baseCard(
-      child: const Column(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'RIWAYAT FUZZY',
+          const Text(
+            'Log Rekomendasi',
             style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
           ),
-          SizedBox(height: 8),
-          Text('10:30 - Tidak ada aksi'),
-          Text('09:30 - Pompa nutrisi aktif'),
+
+          const SizedBox(height: 12),
+
+          // ITEM 1 (Baru)
+          _logItem(
+            color: const Color(0xff03AF55),
+            time: 'Baru Saja',
+            title: 'Kurangi Debit Air',
+            desc: 'Fuzzy logic mendeteksi kelembaban tinggi (0.92)',
+          ),
+
+          const SizedBox(height: 10),
+
+          // ITEM 2
+          _logItem(
+            color: Colors.blue,
+            time: '15 Menit Lalu',
+            title: 'Tambah Larutan A',
+            desc: 'EC di bawah ambang batas (1.1 mS/cm)',
+          ),
+
+          const SizedBox(height: 10),
+
+          // ITEM 3
+          _logItem(
+            color: Colors.grey,
+            time: '1 Jam Lalu',
+            title: 'Sistem Stabil',
+            desc: 'Semua parameter dalam rentang optimal',
+          ),
+
+          const SizedBox(height: 16),
+
+          // BUTTON
+          Center(
+            child: TextButton(
+              onPressed: () {},
+              child: const Text(
+                'Lihat Semua Riwayat',
+                style: TextStyle(
+                  color: Color(0xff03AF55),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
+}
+
+Widget _logItem({
+  required Color color,
+  required String time,
+  required String title,
+  required String desc,
+}) {
+  return Container(
+    decoration: BoxDecoration(
+      color: const Color(0xffF5F5F5),
+      borderRadius: BorderRadius.circular(10),
+    ),
+    child: Row(
+      children: [
+        // GARIS SAMPING
+        Container(
+          width: 4,
+          height: 70,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+
+        const SizedBox(width: 10),
+
+        // TEXT
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  time,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: color,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  title,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  desc,
+                  style: const TextStyle(fontSize: 12, color: Colors.black54),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
 }
 
 //
