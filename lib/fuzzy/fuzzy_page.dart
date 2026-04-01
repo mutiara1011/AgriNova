@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'fuzzy_controller.dart';
 import 'fuzzy_history_page.dart';
+import 'fuzzy_info_page.dart';
 
 class FuzzyPage extends StatelessWidget {
   const FuzzyPage({super.key});
@@ -43,20 +44,21 @@ class FuzzyPage extends StatelessWidget {
         style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
       ),
       actions: [
-        IconButton(
-          icon: const Icon(Icons.info_outline, color: Color(0xff03AF55)),
-          onPressed: () {
-            showDialog(
-              context: context,
-              builder: (_) => AlertDialog(
-                title: const Text('Fuzzy Mamdani'),
-                content: const Text(
-                  'Halaman ini menampilkan hasil evaluasi sistem '
-                  'berdasarkan metode Fuzzy Mamdani.',
-                ),
-              ),
-            );
-          },
+        Padding(
+          padding: const EdgeInsets.only(right: 16),
+          child: GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const FuzzyInfoPage()),
+              );
+            },
+            child: const Icon(
+              Icons.info_outline,
+              size: 26,
+              color: Color(0xff03AF55),
+            ),
+          ),
         ),
       ],
     );

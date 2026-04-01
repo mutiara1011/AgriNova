@@ -34,9 +34,12 @@ class _BottomNavState extends State<BottomNav> {
 
       final latest = notifController.notifications.first;
 
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        showGlobalNotification(context, latest);
-      });
+      // 🔥 CEK SETTING
+      if (notifController.isEnabled) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          showGlobalNotification(context, latest);
+        });
+      }
     }
 
     return Scaffold(

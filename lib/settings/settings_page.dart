@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../fuzzy/fuzzy_controller.dart';
 import 'settings_helper.dart';
+import 'about_page.dart';
+import 'package:agrinova/notification/notification_controller.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -28,6 +30,9 @@ class _SettingsPageState extends State<SettingsPage> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final fuzzy = context.read<FuzzyController>();
+      final notifController = context.read<NotificationController>();
+
+      notifController.isEnabled = notif;
 
       if (modeStr == 'auto') fuzzy.setMode(SystemMode.auto);
       if (modeStr == 'semi') fuzzy.setMode(SystemMode.semiAuto);
@@ -105,7 +110,11 @@ class _SettingsPageState extends State<SettingsPage> {
 
           _switchTile('Notifikasi', notifikasi, (v) async {
             setState(() => notifikasi = v);
-            await SettingsHelper.saveNotif(v); // 🔥 SIMPAN
+
+            final notifController = context.read<NotificationController>();
+            notifController.isEnabled = v;
+
+            await SettingsHelper.saveNotif(v);
           }),
           const Divider(),
 
@@ -285,15 +294,20 @@ class _SettingsPageState extends State<SettingsPage> {
   // ================= ABOUT =================
   Widget _aboutCard() {
     return _baseCard(
-      child: const ListTile(
-        leading: Icon(Icons.info, color: Color(0xff03AF55)),
-        title: Text(
+      child: ListTile(
+        leading: const Icon(Icons.info, color: Color(0xff03AF55)),
+        title: const Text(
           'Tentang Aplikasi',
           style: TextStyle(fontWeight: FontWeight.w600),
         ),
-        subtitle: Text(
-          'Monitoring & kontrol hidroponik berbasis Fuzzy Mamdani.',
-        ),
+        subtitle: const Text('Informasi lengkap tentang aplikasi'),
+        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const AboutPage()),
+          );
+        },
       ),
     );
   }

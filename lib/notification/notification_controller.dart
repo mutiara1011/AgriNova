@@ -3,6 +3,7 @@ import 'notification_model.dart';
 
 class NotificationController extends ChangeNotifier {
   final List<AppNotification> _notifications = [];
+  bool isEnabled = true;
 
   List<AppNotification> get notifications => _notifications;
 
