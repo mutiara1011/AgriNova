@@ -389,6 +389,7 @@ class _DashboardPageState extends State<DashboardPage> {
   // ================= FUZZY STATUS =================
   Widget _fuzzyStatusCard(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
+    final fuzzy = context.watch<FuzzyController>();
     return GestureDetector(
       onTap: () {
         widget.onTabChange(2);
@@ -452,11 +453,11 @@ class _DashboardPageState extends State<DashboardPage> {
 
             const SizedBox(height: 4),
 
-            const Text(
-              "Optimal",
-              style: TextStyle(
+            Text(
+              "Nutrisi ${fuzzy.statusNutrisi}",
+              style: const TextStyle(
                 color: Colors.white,
-                fontSize: 26,
+                fontSize: 22,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -467,7 +468,7 @@ class _DashboardPageState extends State<DashboardPage> {
             ClipRRect(
               borderRadius: BorderRadius.circular(10),
               child: LinearProgressIndicator(
-                value: 0.85,
+                value: (fuzzy.outputPompa / 100).clamp(0.0, 1.0),
                 minHeight: 8,
                 backgroundColor: Colors.white24,
                 valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
@@ -477,9 +478,9 @@ class _DashboardPageState extends State<DashboardPage> {
             const SizedBox(height: 12),
 
             // DESKRIPSI
-            const Text(
-              "Sistem menyesuaikan konsentrasi PPM secara otomatis untuk pertumbuhan maksimal.",
-              style: TextStyle(color: Colors.white70, fontSize: 13),
+            Text(
+              "Status pH: ${fuzzy.statusPh} | Output: ${fuzzy.outputPompa.toStringAsFixed(1)}",
+              style: const TextStyle(color: Colors.white70, fontSize: 13),
             ),
           ],
         ),

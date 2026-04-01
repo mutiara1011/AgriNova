@@ -14,9 +14,9 @@ class ControlPage extends StatefulWidget {
 }
 
 class _ControlPageState extends State<ControlPage> {
-  bool pompa = true;
-  bool aerator = true;
-  bool kipas = false;
+  bool get pompa => context.read<FuzzyController>().pompaAktif;
+  bool get aerator => context.read<FuzzyController>().aeratorAktif;
+  bool get kipas => context.read<FuzzyController>().kipasAktif;
   bool lampu = true;
 
   bool autoPompa = true;
@@ -70,6 +70,28 @@ class _ControlPageState extends State<ControlPage> {
           children: [
             _warningCard(context),
             const SizedBox(height: 16),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xffEFFAF5),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.psychology, color: Color(0xff03AF55)),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      "Fuzzy: ${fuzzy.rekomendasi}",
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 16),
             _switchCard(fuzzy),
             const SizedBox(height: 16),
             _pompaCard(fuzzy),
@@ -95,29 +117,33 @@ class _ControlPageState extends State<ControlPage> {
           _switchTile(
             'Pompa Nutrisi',
             pompa,
-            (v) => setState(() => pompa = v),
-            fuzzy.autoMode,
+            (v) => context.read<FuzzyController>().setPompaManual(v),
+            fuzzy.isAuto,
+            fuzzy.pompaOverride != null,
           ),
           const Divider(thickness: 1.2),
           _switchTile(
             'Aerator',
             aerator,
-            (v) => setState(() => aerator = v),
-            fuzzy.autoMode,
+            (v) => context.read<FuzzyController>().setAeratorManual(v),
+            fuzzy.isAuto,
+            fuzzy.aeratorOverride != null,
           ),
           const Divider(thickness: 1.2),
           _switchTile(
             'Kipas Ruangan',
             kipas,
-            (v) => setState(() => kipas = v),
-            fuzzy.autoMode,
+            (v) => context.read<FuzzyController>().setKipasManual(v),
+            fuzzy.isAuto,
+            fuzzy.kipasOverride != null,
           ),
           const Divider(thickness: 1.2),
           _switchTile(
             'Lampu',
             lampu,
             (v) => setState(() => lampu = v),
-            fuzzy.autoMode,
+            fuzzy.isAuto,
+            false,
           ),
         ],
       ),
@@ -129,19 +155,30 @@ class _ControlPageState extends State<ControlPage> {
     bool value,
     Function(bool) onChanged,
     bool disabled,
+    bool isOverride,
   ) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       child: Row(
         children: [
           Expanded(
-            child: Text(
-              title,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: disabled ? Colors.grey : Colors.black,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: disabled ? Colors.grey : Colors.black,
+                  ),
+                ),
+                if (isOverride)
+                  const Text(
+                    "Override aktif",
+                    style: TextStyle(fontSize: 12, color: Colors.orange),
+                  ),
+              ],
             ),
           ),
           Switch(
@@ -176,14 +213,14 @@ class _ControlPageState extends State<ControlPage> {
               'Pompa Nutrisi (TDS)',
               autoPompa,
               (v) => setState(() => autoPompa = v),
-              fuzzy.autoMode,
+              fuzzy.isAuto,
             ),
             Slider(
               value: tdsValue,
               min: 500,
               max: 1200,
               activeColor: const Color(0xff03AF55),
-              onChanged: (autoPompa || fuzzy.autoMode)
+              onChanged: (autoPompa || fuzzy.isAuto)
                   ? null
                   : (v) => setState(() => tdsValue = v),
             ),
@@ -212,11 +249,11 @@ class _ControlPageState extends State<ControlPage> {
               'Kipas Pendingin',
               autoKipas,
               (v) => setState(() => autoKipas = v),
-              fuzzy.autoMode,
+              fuzzy.isAuto,
             ),
             const SizedBox(height: 10),
             TextField(
-              enabled: !autoKipas && !fuzzy.autoMode,
+              enabled: !autoKipas && !fuzzy.isAuto,
               decoration: const InputDecoration(border: OutlineInputBorder()),
               controller: TextEditingController(
                 text: DummyData.suhu.toStringAsFixed(1),
@@ -244,7 +281,7 @@ class _ControlPageState extends State<ControlPage> {
               'Jadwal Aerator Harian',
               autoAerator,
               (v) => setState(() => autoAerator = v),
-              fuzzy.autoMode,
+              fuzzy.isAuto,
             ),
             const SizedBox(height: 8),
             DropdownButtonFormField<int>(
@@ -252,7 +289,7 @@ class _ControlPageState extends State<ControlPage> {
               items: [1, 2, 3, 4]
                   .map((e) => DropdownMenuItem(value: e, child: Text('$e jam')))
                   .toList(),
-              onChanged: (!autoAerator && !fuzzy.autoMode)
+              onChanged: (!autoAerator && !fuzzy.isAuto)
                   ? (v) => setState(() => durasiAerator = v ?? durasiAerator)
                   : null,
             ),

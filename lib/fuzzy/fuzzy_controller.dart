@@ -2,20 +2,46 @@ import 'package:flutter/material.dart';
 import '../dummy_data.dart';
 import '../notification/notification_controller.dart';
 import '../notification/notification_model.dart';
+import 'dart:async';
+
+enum SystemMode { auto, semiAuto, manual }
 
 class FuzzyController extends ChangeNotifier {
-  final NotificationController notificationController;
+  late NotificationController notificationController;
 
-  FuzzyController(this.notificationController);
+  FuzzyController(this.notificationController) {
+    startTimer(); // 🔥 mulai otomatis
+  }
+
+  int interval = 1;
+  Timer? _timer;
+
+  void startTimer() {
+    _timer?.cancel();
+    _timer = Timer.periodic(Duration(seconds: interval), (_) {
+      updateFromSensor();
+    });
+  }
+
   // SENSOR (dummy)
   double ph = 6.2;
   double tds = 800;
 
   // MODE
-  bool autoMode = true;
+  SystemMode mode = SystemMode.auto;
+  bool get isAuto => mode == SystemMode.auto;
+  bool get isManual => mode == SystemMode.manual;
+  bool get isSemiAuto => mode == SystemMode.semiAuto;
+
+  bool? pompaOverride;
+  bool? kipasOverride;
+  bool? aeratorOverride;
 
   bool airKritisSent = false;
   bool phWarningSent = false;
+  bool tdsWarningSent = false;
+  bool suhuWarningSent = false;
+  bool ekstremSent = false;
 
   // OUTPUT FUZZY
   bool pompaAktif = false;
@@ -54,6 +80,15 @@ class FuzzyController extends ChangeNotifier {
     }
   }
 
+  String get statusNutrisi {
+    if (outputPompa > 70) return "Tinggi";
+    if (outputPompa > 40) return "Sedang";
+    return "Rendah";
+  }
+
+  List<Map<String, dynamic>> logRekomendasi = [];
+  String? lastRekomendasi;
+
   void updateFromSensor() {
     DummyData.update();
 
@@ -61,6 +96,19 @@ class FuzzyController extends ChangeNotifier {
     tds = DummyData.tds;
 
     evaluateFuzzy();
+
+    if (outputPompa > 75 && !ekstremSent) {
+      notificationController.addNotification(
+        "Kondisi Ekstrem",
+        "Sistem mendeteksi kebutuhan nutrisi tinggi",
+        NotificationType.warning,
+      );
+      ekstremSent = true;
+    }
+
+    if (outputPompa <= 75) {
+      ekstremSent = false;
+    }
 
     if (DummyData.ketinggianAir < 9 && !airKritisSent) {
       notificationController.addNotification(
@@ -87,10 +135,36 @@ class FuzzyController extends ChangeNotifier {
     if (DummyData.ph >= 5.8 && DummyData.ph <= 7.2) {
       phWarningSent = false;
     }
+
+    if ((tds < 700 || tds > 900) && !tdsWarningSent) {
+      notificationController.addNotification(
+        "Nutrisi Tidak Ideal",
+        "TDS di luar range optimal (700-900)",
+        NotificationType.warning,
+      );
+      tdsWarningSent = true;
+    }
+
+    if (tds >= 700 && tds <= 900) {
+      tdsWarningSent = false;
+    }
+
+    if (DummyData.suhu > 30 && !suhuWarningSent) {
+      notificationController.addNotification(
+        "Suhu Tinggi",
+        "Suhu terlalu panas (>30°C)",
+        NotificationType.warning,
+      );
+      suhuWarningSent = true;
+    }
+
+    if (DummyData.suhu <= 30) {
+      suhuWarningSent = false;
+    }
   }
 
   void evaluateFuzzy() {
-    if (!autoMode) return;
+    if (isManual) return;
 
     // =====================
     // 1. FUZZIFIKASI pH
@@ -181,35 +255,76 @@ class FuzzyController extends ChangeNotifier {
       rekomendasi = "Tidak perlu pompa";
     }
 
+    // ================= LOG REKOMENDASI =================
+    if (rekomendasi != lastRekomendasi) {
+      logRekomendasi.insert(0, {
+        "title": rekomendasi,
+        "desc": "pH: ${ph.toStringAsFixed(1)}, TDS: ${tds.toStringAsFixed(0)}",
+        "time": DateTime.now(),
+      });
+
+      if (logRekomendasi.length > 50) {
+        logRekomendasi.removeLast();
+      }
+
+      lastRekomendasi = rekomendasi;
+    }
+
     kipasAktif = ph > 7;
     aeratorAktif = true;
 
-    notifyListeners();
-  }
+    // hasil fuzzy asli
+    bool pompaFuzzy = outputPompa > 40;
+    bool kipasFuzzy = ph > 7;
+    bool aeratorFuzzy = true;
 
-  void setAutoMode(bool value) {
-    autoMode = value;
+    // ================= MODE HANDLING =================
 
-    if (autoMode) {
-      // Kalau ON → hitung fuzzy
-      evaluateFuzzy();
+    if (isManual) {
+      // full manual → pakai override semua
+      pompaAktif = pompaOverride ?? pompaAktif;
+      kipasAktif = kipasOverride ?? kipasAktif;
+      aeratorAktif = aeratorOverride ?? aeratorAktif;
+    } else if (isSemiAuto) {
+      // combine → pakai override kalau ada
+      pompaAktif = pompaOverride ?? pompaFuzzy;
+      kipasAktif = kipasOverride ?? kipasFuzzy;
+      aeratorAktif = aeratorOverride ?? aeratorFuzzy;
+    } else {
+      // full auto → pakai fuzzy
+      pompaAktif = pompaFuzzy;
+      kipasAktif = kipasFuzzy;
+      aeratorAktif = aeratorFuzzy;
     }
 
     notifyListeners();
   }
 
+  void setMode(SystemMode newMode) {
+    mode = newMode;
+
+    if (mode == SystemMode.auto) {
+      // reset override kalau full auto
+      pompaOverride = null;
+      kipasOverride = null;
+      aeratorOverride = null;
+    }
+
+    evaluateFuzzy();
+  }
+
   void setPompaManual(bool value) {
-    pompaAktif = value;
+    pompaOverride = value;
     notifyListeners();
   }
 
   void setKipasManual(bool value) {
-    kipasAktif = value;
+    kipasOverride = value;
     notifyListeners();
   }
 
   void setAeratorManual(bool value) {
-    aeratorAktif = value;
+    aeratorOverride = value;
     notifyListeners();
   }
 }

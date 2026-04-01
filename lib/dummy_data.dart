@@ -5,6 +5,8 @@ import 'dart:async';
 class DummyData {
   static final _rand = Random();
 
+  static DateTime startDate = DateTime.now();
+
   // ================= TANAMAN =================
   static String plantName = "Selada Romaine";
   static int hst = 25;
@@ -52,9 +54,7 @@ class DummyData {
     final cuacaList = ["Cerah", "Berawan", "Hujan"];
     cuaca = cuacaList[_rand.nextInt(3)];
 
-    if (_rand.nextDouble() < 0.05) {
-      hst++; // naik perlahan
-    }
+    hst = DateTime.now().difference(startDate).inDays + 1;
   }
 
   // ================= GRAFIK =================

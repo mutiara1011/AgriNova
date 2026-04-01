@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'dashboard_page.dart';
 import 'control_page.dart';
 import 'fuzzy/fuzzy_page.dart';
-import 'settings_page.dart';
+import 'settings/settings_page.dart';
 import 'notification/notification_controller.dart';
 import 'notification/notification_service.dart';
 import 'package:provider/provider.dart';

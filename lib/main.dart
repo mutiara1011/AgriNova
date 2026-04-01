@@ -12,9 +12,14 @@ void main() {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => NotificationController()),
+
         ChangeNotifierProxyProvider<NotificationController, FuzzyController>(
-          create: (_) => FuzzyController(NotificationController()),
-          update: (_, notif, __) => FuzzyController(notif),
+          create: (context) =>
+              FuzzyController(context.read<NotificationController>()),
+          update: (context, notif, previous) {
+            previous!.notificationController = notif;
+            return previous;
+          },
         ),
       ],
       child: const MyApp(),

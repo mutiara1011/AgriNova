@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'fuzzy_controller.dart';
+import 'fuzzy_history_page.dart';
 
 class FuzzyPage extends StatelessWidget {
   const FuzzyPage({super.key});
@@ -149,22 +150,87 @@ class _ConditionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fuzzy = context.watch<FuzzyController>(); // 🔥 TAMBAH INI
+    final fuzzy = context.watch<FuzzyController>();
 
-    return _baseCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'KONDISI SAAT INI',
-            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
-          ),
-          const SizedBox(height: 8),
+    return Card(
+      color: const Color(0xffEFFAF5),
+      elevation: 8,
+      shadowColor: Colors.black.withValues(alpha: 0.25),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            // HEADER
+            Row(
+              children: const [
+                Icon(Icons.analytics, color: Color(0xff03AF55)),
+                SizedBox(width: 8),
+                Text(
+                  'KONDISI SAAT INI',
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+                ),
+              ],
+            ),
 
-          Text('• pH Air : ${fuzzy.statusPh}'), // 🔥 DINAMIS
-          Text('• Nutrisi (TDS) : ${fuzzy.tds.toStringAsFixed(0)}'),
-          Text('• Sistem : ${fuzzy.rekomendasi}'),
-        ],
+            const SizedBox(height: 16),
+
+            // GRID DETAIL
+            Row(
+              children: [
+                Expanded(
+                  child: _infoItem(
+                    title: "pH Air",
+                    value: fuzzy.ph.toStringAsFixed(1),
+                    status: fuzzy.statusPh,
+                  ),
+                ),
+                Expanded(
+                  child: _infoItem(
+                    title: "TDS",
+                    value: "${fuzzy.tds.toStringAsFixed(0)} PPM",
+                    status: fuzzy.statusNutrisi,
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 12),
+
+            Row(
+              children: [
+                Expanded(
+                  child: _infoItem(
+                    title: "Output Pompa",
+                    value: fuzzy.outputPompa.toStringAsFixed(1),
+                    status: "Crisp Value",
+                  ),
+                ),
+                Expanded(
+                  child: _infoItem(
+                    title: "Rekomendasi",
+                    value: fuzzy.rekomendasi,
+                    status: "",
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 12),
+
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: LinearProgressIndicator(
+                value: (fuzzy.outputPompa / 100).clamp(0.0, 1.0),
+                minHeight: 8,
+                backgroundColor: Colors.grey.shade300,
+                valueColor: const AlwaysStoppedAnimation<Color>(
+                  Color(0xff03AF55),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -560,64 +626,71 @@ class _HistoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final fuzzy = context.watch<FuzzyController>();
+    final logs = fuzzy.logRekomendasi.take(5).toList();
     return _baseCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Log Rekomendasi',
-            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
-          ),
-
-          const SizedBox(height: 12),
-
-          // ITEM 1 (Baru)
-          _logItem(
-            color: const Color(0xff03AF55),
-            time: 'Baru Saja',
-            title: 'Kurangi Debit Air',
-            desc: 'Fuzzy logic mendeteksi kelembaban tinggi (0.92)',
-          ),
-
-          const SizedBox(height: 10),
-
-          // ITEM 2
-          _logItem(
-            color: Colors.blue,
-            time: '15 Menit Lalu',
-            title: 'Tambah Larutan A',
-            desc: 'EC di bawah ambang batas (1.1 mS/cm)',
-          ),
-
-          const SizedBox(height: 10),
-
-          // ITEM 3
-          _logItem(
-            color: Colors.grey,
-            time: '1 Jam Lalu',
-            title: 'Sistem Stabil',
-            desc: 'Semua parameter dalam rentang optimal',
-          ),
-
-          const SizedBox(height: 16),
-
-          // BUTTON
-          Center(
-            child: TextButton(
-              onPressed: () {},
-              child: const Text(
-                'Lihat Semua Riwayat',
-                style: TextStyle(
-                  color: Color(0xff03AF55),
-                  fontWeight: FontWeight.w600,
+      child: logs.isEmpty
+          ? const Center(child: Text("Belum ada data"))
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Log Rekomendasi',
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
                 ),
-              ),
+
+                const SizedBox(height: 12),
+
+                Column(
+                  children: logs.map((log) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: _logItem(
+                        color: const Color(0xff03AF55),
+                        time: _formatTime(log["time"]),
+                        title: log["title"],
+                        desc: log["desc"],
+                      ),
+                    );
+                  }).toList(),
+                ),
+
+                const SizedBox(height: 16),
+
+                // BUTTON
+                Center(
+                  child: TextButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const FuzzyHistoryPage(),
+                        ),
+                      );
+                    },
+                    child: const Text(
+                      'Lihat Semua Riwayat',
+                      style: TextStyle(
+                        color: Color(0xff03AF55),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ),
-        ],
-      ),
     );
   }
+}
+
+String _formatTime(DateTime time) {
+  final diff = DateTime.now().difference(time);
+
+  if (diff.inSeconds < 60) return "Baru saja";
+  if (diff.inMinutes < 60) return "${diff.inMinutes} menit lalu";
+  if (diff.inHours < 24) return "${diff.inHours} jam lalu";
+
+  return "${time.day}/${time.month} ${time.hour}:${time.minute.toString().padLeft(2, '0')}";
 }
 
 Widget _logItem({
@@ -674,6 +747,41 @@ Widget _logItem({
             ),
           ),
         ),
+      ],
+    ),
+  );
+}
+
+Widget _infoItem({
+  required String title,
+  required String value,
+  required String status,
+}) {
+  return Container(
+    margin: const EdgeInsets.all(6),
+    padding: const EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(10),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+        ),
+        if (status.isNotEmpty)
+          Text(
+            status,
+            style: const TextStyle(
+              fontSize: 12,
+              color: Color(0xff03AF55),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
       ],
     ),
   );
