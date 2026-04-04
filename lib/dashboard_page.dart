@@ -62,7 +62,7 @@ class _DashboardPageState extends State<DashboardPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: _appBar(),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -84,7 +84,7 @@ class _DashboardPageState extends State<DashboardPage> {
   // ================= APP BAR =================
   AppBar _appBar() {
     return AppBar(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       centerTitle: true,
       elevation: 0,
       title: Row(
@@ -92,12 +92,12 @@ class _DashboardPageState extends State<DashboardPage> {
         children: [
           Image.asset('assets/images/logo.png', height: 36),
           const SizedBox(width: 6),
-          const Text(
+          Text(
             'AGRINOVA',
             style: TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 26,
-              color: Colors.black,
+              color: Theme.of(context).textTheme.bodyMedium!.color,
             ),
           ),
         ],
@@ -126,9 +126,9 @@ class _DashboardPageState extends State<DashboardPage> {
   // ================= PLANT INFO =================
   Widget _plantInfoCard(BuildContext context) {
     return Card(
-      color: const Color(0xffEFFAF5),
+      color: Theme.of(context).cardColor,
       elevation: 8,
-      shadowColor: Colors.black.withValues(alpha: 0.25),
+      shadowColor: Theme.of(context).shadowColor,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11)),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -321,9 +321,9 @@ class _DashboardPageState extends State<DashboardPage> {
       ),
     ];
     return Card(
-      color: const Color(0xffEFFAF5),
+      color: Theme.of(context).cardColor,
       elevation: 8,
-      shadowColor: Colors.black.withValues(alpha: 0.25),
+      shadowColor: Theme.of(context).shadowColor,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -651,9 +651,9 @@ class _SensorCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      color: const Color(0xffEFFAF5),
+      color: Theme.of(context).cardColor,
       elevation: 8,
-      shadowColor: Colors.black.withValues(alpha: 0.25),
+      shadowColor: Theme.of(context).shadowColor,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11)),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),

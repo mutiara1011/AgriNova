@@ -11,7 +11,11 @@ class NotificationPage extends StatelessWidget {
     final notif = context.watch<NotificationController>();
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Notifikasi")),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: AppBar(
+        title: const Text("Notifikasi"),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      ),
       body: ListView.builder(
         padding: const EdgeInsets.all(16),
         itemCount: notif.notifications.length,

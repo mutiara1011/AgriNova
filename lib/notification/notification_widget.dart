@@ -37,7 +37,7 @@ class NotificationCard extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xffF5F5F5),
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
@@ -82,9 +82,11 @@ class NotificationCard extends StatelessWidget {
                         const SizedBox(height: 2),
                         Text(
                           notif.message,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
-                            color: Colors.black54,
+                            color: Theme.of(
+                              context,
+                            ).textTheme.bodyMedium!.color,
                           ),
                         ),
                       ],

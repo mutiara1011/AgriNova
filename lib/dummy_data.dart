@@ -9,7 +9,9 @@ class DummyData {
 
   // ================= TANAMAN =================
   static String plantName = "Selada Romaine";
-  static int hst = 25;
+  static int get hst {
+    return DateTime.now().difference(startDate).inDays + 1;
+  }
 
   // ================= SENSOR =================
   static double tds = 800;
@@ -53,8 +55,6 @@ class DummyData {
     // CUACA RANDOM
     final cuacaList = ["Cerah", "Berawan", "Hujan"];
     cuaca = cuacaList[_rand.nextInt(3)];
-
-    hst = DateTime.now().difference(startDate).inDays + 1;
   }
 
   // ================= GRAFIK =================

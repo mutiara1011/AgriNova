@@ -10,7 +10,7 @@ class FuzzyPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: _appBar(context),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -36,12 +36,15 @@ class FuzzyPage extends StatelessWidget {
   // ================= APP BAR =================
   AppBar _appBar(BuildContext context) {
     return AppBar(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       elevation: 0,
       centerTitle: true,
-      title: const Text(
+      title: Text(
         'FUZZY LOGIC',
-        style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+          color: Theme.of(context).textTheme.bodyMedium!.color,
+        ),
       ),
       actions: [
         Padding(
@@ -76,9 +79,9 @@ class _FuzzyStatusCard extends StatelessWidget {
     final fuzzy = context.watch<FuzzyController>();
 
     return Card(
-      color: const Color(0xffEFFAF5),
+      color: Theme.of(context).cardColor,
       elevation: 8,
-      shadowColor: Colors.black.withValues(alpha: 0.25),
+      shadowColor: Theme.of(context).shadowColor,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11)),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -155,9 +158,9 @@ class _ConditionCard extends StatelessWidget {
     final fuzzy = context.watch<FuzzyController>();
 
     return Card(
-      color: const Color(0xffEFFAF5),
+      color: Theme.of(context).cardColor,
       elevation: 8,
-      shadowColor: Colors.black.withValues(alpha: 0.25),
+      shadowColor: Theme.of(context).shadowColor,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11)),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -182,6 +185,7 @@ class _ConditionCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: _infoItem(
+                    context: context,
                     title: "pH Air",
                     value: fuzzy.ph.toStringAsFixed(1),
                     status: fuzzy.statusPh,
@@ -190,6 +194,7 @@ class _ConditionCard extends StatelessWidget {
                 Expanded(
                   child: _infoItem(
                     title: "TDS",
+                    context: context,
                     value: "${fuzzy.tds.toStringAsFixed(0)} PPM",
                     status: fuzzy.statusNutrisi,
                   ),
@@ -203,6 +208,7 @@ class _ConditionCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: _infoItem(
+                    context: context,
                     title: "Output Pompa",
                     value: fuzzy.outputPompa.toStringAsFixed(1),
                     status: "Crisp Value",
@@ -210,6 +216,7 @@ class _ConditionCard extends StatelessWidget {
                 ),
                 Expanded(
                   child: _infoItem(
+                    context: context,
                     title: "Rekomendasi",
                     value: fuzzy.rekomendasi,
                     status: "",
@@ -264,6 +271,7 @@ class _MembershipCard extends StatelessWidget {
     final membership = fuzzy.muPhNormal;
 
     return _baseCard(
+      context: context,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -337,7 +345,7 @@ class _MembershipCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Theme.of(context).scaffoldBackgroundColor,
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
@@ -355,7 +363,7 @@ class _MembershipCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Theme.of(context).scaffoldBackgroundColor,
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
@@ -370,7 +378,7 @@ class _MembershipCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Theme.of(context).scaffoldBackgroundColor,
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
@@ -450,6 +458,7 @@ class _RuleCard extends StatelessWidget {
     final fuzzy = context.watch<FuzzyController>();
 
     return _baseCard(
+      context: context,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -462,6 +471,7 @@ class _RuleCard extends StatelessWidget {
 
           // R1 (AKTIF)
           _ruleItem(
+            context: context,
             label: 'R1',
             isActive: fuzzy.r1Active,
             content: Wrap(
@@ -486,6 +496,7 @@ class _RuleCard extends StatelessWidget {
 
           // R2 (TIDAK AKTIF)
           _ruleItem(
+            context: context,
             label: 'R2',
             isActive: fuzzy.r2 > 0,
             content: const Text(
@@ -497,6 +508,7 @@ class _RuleCard extends StatelessWidget {
           const SizedBox(height: 12),
 
           _ruleItem(
+            context: context,
             label: 'R3',
             isActive: fuzzy.r3Active,
             content: const Text(
@@ -511,6 +523,7 @@ class _RuleCard extends StatelessWidget {
 }
 
 Widget _ruleItem({
+  required context,
   required String label,
   required bool isActive,
   required Widget content,
@@ -521,7 +534,7 @@ Widget _ruleItem({
     child: Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xffF5F5F5),
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
@@ -599,9 +612,9 @@ class _RecommendationCard extends StatelessWidget {
     final fuzzy = context.watch<FuzzyController>();
 
     return Card(
-      color: const Color(0xffEFFAF5),
+      color: Theme.of(context).cardColor,
       elevation: 8,
-      shadowColor: Colors.black.withValues(alpha: 0.25),
+      shadowColor: Theme.of(context).shadowColor,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11)),
       child: ListTile(
         leading: Icon(
@@ -631,6 +644,7 @@ class _HistoryCard extends StatelessWidget {
     final fuzzy = context.watch<FuzzyController>();
     final logs = fuzzy.logRekomendasi.take(5).toList();
     return _baseCard(
+      context: context,
       child: logs.isEmpty
           ? const Center(child: Text("Belum ada data"))
           : Column(
@@ -648,6 +662,7 @@ class _HistoryCard extends StatelessWidget {
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 10),
                       child: _logItem(
+                        context: context,
                         color: const Color(0xff03AF55),
                         time: _formatTime(log["time"]),
                         title: log["title"],
@@ -696,6 +711,7 @@ String _formatTime(DateTime time) {
 }
 
 Widget _logItem({
+  required context,
   required Color color,
   required String time,
   required String title,
@@ -703,7 +719,7 @@ Widget _logItem({
 }) {
   return Container(
     decoration: BoxDecoration(
-      color: const Color(0xffF5F5F5),
+      color: Theme.of(context).scaffoldBackgroundColor,
       borderRadius: BorderRadius.circular(10),
     ),
     child: Row(
@@ -743,7 +759,10 @@ Widget _logItem({
                 const SizedBox(height: 2),
                 Text(
                   desc,
-                  style: const TextStyle(fontSize: 12, color: Colors.black54),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Theme.of(context).textTheme.bodyMedium!.color,
+                  ),
                 ),
               ],
             ),
@@ -755,6 +774,7 @@ Widget _logItem({
 }
 
 Widget _infoItem({
+  required context,
   required String title,
   required String value,
   required String status,
@@ -763,7 +783,7 @@ Widget _infoItem({
     margin: const EdgeInsets.all(6),
     padding: const EdgeInsets.all(12),
     decoration: BoxDecoration(
-      color: Colors.white,
+      color: Theme.of(context).scaffoldBackgroundColor,
       borderRadius: BorderRadius.circular(10),
     ),
     child: Column(
@@ -792,11 +812,15 @@ Widget _infoItem({
 //
 // ================= BASE CARD (BIAR KONSISTEN) =================
 //
-Widget _baseCard({required Widget child, double minHeight = 120}) {
+Widget _baseCard({
+  required BuildContext context,
+  required Widget child,
+  double minHeight = 120,
+}) {
   return Card(
-    color: const Color(0xffEFFAF5),
+    color: Theme.of(context).cardColor,
     elevation: 8,
-    shadowColor: Colors.black.withValues(alpha: 0.25),
+    shadowColor: Theme.of(context).shadowColor,
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11)),
     child: Container(
       width: double.infinity,

@@ -6,11 +6,11 @@ class FuzzyInfoPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text("Edukasi Fuzzy"),
         centerTitle: true,
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         foregroundColor: Colors.black,
         elevation: 0,
       ),
@@ -20,6 +20,7 @@ class FuzzyInfoPage extends StatelessWidget {
         child: Column(
           children: [
             _section(
+              context: context,
               title: "Apa itu Logika Fuzzy?",
               icon: Icons.psychology,
               content:
@@ -30,6 +31,7 @@ class FuzzyInfoPage extends StatelessWidget {
             ),
 
             _section(
+              context: context,
               title: "Kenapa Fuzzy Digunakan?",
               icon: Icons.lightbulb,
               content:
@@ -39,6 +41,7 @@ class FuzzyInfoPage extends StatelessWidget {
             ),
 
             _section(
+              context: context,
               title: "Cara Kerja di Aplikasi Ini",
               icon: Icons.settings,
               content:
@@ -50,6 +53,7 @@ class FuzzyInfoPage extends StatelessWidget {
             ),
 
             _section(
+              context: context,
               title: "Contoh Kasus",
               icon: Icons.science,
               content:
@@ -65,6 +69,7 @@ class FuzzyInfoPage extends StatelessWidget {
             ),
 
             _section(
+              context: context,
               title: "Manfaat untuk Hidroponik",
               icon: Icons.eco,
               content:
@@ -76,6 +81,7 @@ class FuzzyInfoPage extends StatelessWidget {
             ),
 
             _section(
+              context: context,
               title: "Kesimpulan",
               icon: Icons.check_circle,
               content:
@@ -89,6 +95,7 @@ class FuzzyInfoPage extends StatelessWidget {
   }
 
   Widget _section({
+    required context,
     required String title,
     required IconData icon,
     required String content,
@@ -97,7 +104,7 @@ class FuzzyInfoPage extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xffEFFAF5),
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(

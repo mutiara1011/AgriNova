@@ -13,11 +13,11 @@ class FuzzyHistoryPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Riwayat Rekomendasi"),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        foregroundColor: Theme.of(context).textTheme.bodyMedium!.color,
         elevation: 0,
       ),
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: logs.isEmpty
           ? const Center(child: Text("Belum ada riwayat"))
           : ListView.builder(
@@ -29,6 +29,7 @@ class FuzzyHistoryPage extends StatelessWidget {
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 12),
                   child: _logItem(
+                    context: context,
                     color: const Color(0xff03AF55),
                     time: _formatTime(log["time"]),
                     title: log["title"],
@@ -52,6 +53,7 @@ String _formatTime(DateTime time) {
 }
 
 Widget _logItem({
+  required context,
   required Color color,
   required String time,
   required String title,
@@ -59,7 +61,7 @@ Widget _logItem({
 }) {
   return Container(
     decoration: BoxDecoration(
-      color: const Color(0xffF5F5F5),
+      color: Theme.of(context).cardColor,
       borderRadius: BorderRadius.circular(10),
     ),
     child: Row(
@@ -95,7 +97,10 @@ Widget _logItem({
                 const SizedBox(height: 2),
                 Text(
                   desc,
-                  style: const TextStyle(fontSize: 12, color: Colors.black54),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Theme.of(context).textTheme.bodyMedium!.color,
+                  ),
                 ),
               ],
             ),

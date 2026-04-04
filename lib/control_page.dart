@@ -54,14 +54,17 @@ class _ControlPageState extends State<ControlPage> {
     final fuzzy = context.watch<FuzzyController>();
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         centerTitle: true,
-        title: const Text(
+        title: Text(
           'KONTROL',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Theme.of(context).textTheme.bodyMedium!.color,
+          ),
         ),
       ),
       body: SingleChildScrollView(
@@ -74,7 +77,7 @@ class _ControlPageState extends State<ControlPage> {
               width: double.infinity,
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xffEFFAF5),
+                color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
@@ -108,9 +111,9 @@ class _ControlPageState extends State<ControlPage> {
   // ================= SWITCH CARD =================
   Widget _switchCard(FuzzyController fuzzy) {
     return Card(
-      color: const Color(0xffEFFAF5),
+      color: Theme.of(context).cardColor,
       elevation: 8,
-      shadowColor: Colors.black.withValues(alpha: 0.25),
+      shadowColor: Theme.of(context).shadowColor,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Column(
         children: [
@@ -201,9 +204,9 @@ class _ControlPageState extends State<ControlPage> {
   // ================= POMPA =================
   Widget _pompaCard(FuzzyController fuzzy) {
     return Card(
-      color: const Color(0xffEFFAF5),
+      color: Theme.of(context).cardColor,
       elevation: 8,
-      shadowColor: Colors.black.withValues(alpha: 0.25),
+      shadowColor: Theme.of(context).shadowColor,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -237,9 +240,9 @@ class _ControlPageState extends State<ControlPage> {
   // ================= KIPAS =================
   Widget _kipasCard(FuzzyController fuzzy) {
     return Card(
-      color: const Color(0xffEFFAF5),
+      color: Theme.of(context).cardColor,
       elevation: 8,
-      shadowColor: Colors.black.withValues(alpha: 0.25),
+      shadowColor: Theme.of(context).shadowColor,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -269,9 +272,9 @@ class _ControlPageState extends State<ControlPage> {
   // ================= AERATOR =================
   Widget _aeratorCard(FuzzyController fuzzy) {
     return Card(
-      color: const Color(0xffEFFAF5),
+      color: Theme.of(context).cardColor,
       elevation: 8,
-      shadowColor: Colors.black.withValues(alpha: 0.25),
+      shadowColor: Theme.of(context).shadowColor,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16),

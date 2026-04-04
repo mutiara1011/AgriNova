@@ -4,6 +4,8 @@ import '../fuzzy/fuzzy_controller.dart';
 import 'settings_helper.dart';
 import 'about_page.dart';
 import 'package:agrinova/notification/notification_controller.dart';
+import 'package:agrinova/dummy_data.dart';
+import 'theme_controller.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -51,7 +53,7 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: _appBar(),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -77,12 +79,15 @@ class _SettingsPageState extends State<SettingsPage> {
   // ================= APP BAR =================
   AppBar _appBar() {
     return AppBar(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       elevation: 0,
       centerTitle: true,
-      title: const Text(
+      title: Text(
         'PENGATURAN',
-        style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+          color: Theme.of(context).textTheme.bodyMedium!.color,
+        ),
       ),
     );
   }
@@ -118,11 +123,11 @@ class _SettingsPageState extends State<SettingsPage> {
           }),
           const Divider(),
 
-          _switchTile(
-            'Mode Gelap',
-            modeGelap,
-            (v) => setState(() => modeGelap = v),
-          ),
+          _switchTile('Mode Gelap', context.watch<ThemeController>().isDark, (
+            v,
+          ) {
+            context.read<ThemeController>().toggleTheme(v);
+          }),
         ],
       ),
     );
@@ -266,7 +271,7 @@ class _SettingsPageState extends State<SettingsPage> {
     return _baseCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: const [
+        children: [
           Row(
             children: [
               Icon(Icons.local_florist, color: Color(0xff03AF55)),
@@ -281,11 +286,33 @@ class _SettingsPageState extends State<SettingsPage> {
 
           _ListItem('Jenis Tanaman', 'Selada Romaine'),
           Divider(),
-          _ListItem('Umur Tanam', '25 HST'),
+          _ListItem('Umur Tanam', '${DummyData.hst} HST'),
           Divider(),
           _ListItem('pH Ideal', '5.5 – 6.5'),
           Divider(),
           _ListItem('TDS Ideal', '700 – 900'),
+          ListTile(
+            title: const Text("Tanggal Tanam"),
+            subtitle: Text(
+              "${DummyData.startDate.day}/${DummyData.startDate.month}/${DummyData.startDate.year}",
+            ),
+            trailing: const Icon(Icons.calendar_today),
+            onTap: () async {
+              final picked = await showDatePicker(
+                context: context,
+                initialDate: DummyData.startDate,
+                firstDate: DateTime(2020),
+                lastDate: DateTime.now(),
+              );
+
+              if (picked != null) {
+                setState(() {
+                  DummyData.startDate = picked;
+                });
+              }
+            },
+          ),
+          const Divider(),
         ],
       ),
     );
@@ -315,9 +342,9 @@ class _SettingsPageState extends State<SettingsPage> {
   // ================= COMPONENT =================
   Widget _baseCard({required Widget child}) {
     return Card(
-      color: const Color(0xffEFFAF5),
+      color: Theme.of(context).cardColor,
       elevation: 8,
-      shadowColor: Colors.black.withValues(alpha: 0.25),
+      shadowColor: Theme.of(context).shadowColor,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11)),
       child: Padding(padding: const EdgeInsets.all(16), child: child),
     );

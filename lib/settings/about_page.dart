@@ -6,12 +6,12 @@ class AboutPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text("Tentang Aplikasi"),
         centerTitle: true,
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        foregroundColor: Theme.of(context).textTheme.bodyMedium!.color,
         elevation: 0,
       ),
 
@@ -22,12 +22,14 @@ class AboutPage extends StatelessWidget {
             _header(),
 
             _section(
+              context,
               "Deskripsi Aplikasi",
               Icons.description,
               "AGRINOVA adalah aplikasi mobile berbasis Flutter yang dirancang untuk membantu monitoring dan kontrol nutrisi hidroponik menggunakan metode Fuzzy Mamdani.",
             ),
 
             _section(
+              context,
               "Latar Belakang",
               Icons.school,
               "Pengelolaan hidroponik membutuhkan pengawasan parameter seperti pH dan nutrisi (TDS). Namun, pengambilan keputusan secara manual seringkali tidak konsisten.\n\n"
@@ -35,6 +37,7 @@ class AboutPage extends StatelessWidget {
             ),
 
             _section(
+              context,
               "Tujuan Sistem",
               Icons.flag,
               "• Membantu monitoring kondisi tanaman\n"
@@ -44,6 +47,7 @@ class AboutPage extends StatelessWidget {
             ),
 
             _section(
+              context,
               "Fitur Utama",
               Icons.star,
               "• Monitoring pH, TDS, suhu, dan kelembapan\n"
@@ -54,6 +58,7 @@ class AboutPage extends StatelessWidget {
             ),
 
             _section(
+              context,
               "Cara Menggunakan Aplikasi",
               Icons.menu_book,
               "1. Buka aplikasi AGRINOVA\n"
@@ -67,6 +72,7 @@ class AboutPage extends StatelessWidget {
             ),
 
             _section(
+              context,
               "Mode Sistem",
               Icons.tune,
               "Aplikasi AGRINOVA menyediakan 3 mode pengoperasian sistem:\n\n"
@@ -82,6 +88,7 @@ class AboutPage extends StatelessWidget {
             ),
 
             _section(
+              context,
               "Penjelasan Menu",
               Icons.dashboard,
               "• Dashboard → Menampilkan kondisi sensor secara real-time\n"
@@ -92,6 +99,7 @@ class AboutPage extends StatelessWidget {
             ),
 
             _section(
+              context,
               "Tips Penggunaan",
               Icons.tips_and_updates,
               "• Gunakan mode AUTO untuk hasil optimal\n"
@@ -102,6 +110,7 @@ class AboutPage extends StatelessWidget {
             ),
 
             _section(
+              context,
               "Teknologi yang Digunakan",
               Icons.memory,
               "• Flutter (Mobile App)\n"
@@ -111,6 +120,7 @@ class AboutPage extends StatelessWidget {
             ),
 
             _section(
+              context,
               "Cara Kerja Sistem",
               Icons.settings,
               "1. Sensor membaca kondisi lingkungan\n"
@@ -121,6 +131,7 @@ class AboutPage extends StatelessWidget {
             ),
 
             _section(
+              context,
               "Manfaat Sistem",
               Icons.eco,
               "• Monitoring lebih mudah\n"
@@ -130,6 +141,7 @@ class AboutPage extends StatelessWidget {
             ),
 
             _section(
+              context,
               "Pengembang",
               Icons.person,
               "Mutiara Sandi\nMahasiswa Informatika\nUniversitas Sultan Ageng Tirtayasa",
@@ -166,12 +178,17 @@ class AboutPage extends StatelessWidget {
     );
   }
 
-  Widget _section(String title, IconData icon, String content) {
+  Widget _section(
+    BuildContext context,
+    String title,
+    IconData icon,
+    String content,
+  ) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xffEFFAF5),
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(

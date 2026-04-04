@@ -28,7 +28,7 @@ void showGlobalNotification(BuildContext context, AppNotification notif) {
           ).animate(animation),
           child: Material(
             color: Colors.transparent,
-            child: _notificationUI(notif),
+            child: _notificationUI(context, notif),
           ),
         ),
       ),
@@ -47,7 +47,7 @@ void showGlobalNotification(BuildContext context, AppNotification notif) {
   });
 }
 
-Widget _notificationUI(AppNotification notif) {
+Widget _notificationUI(BuildContext context, AppNotification notif) {
   Color color;
   IconData icon;
 
@@ -68,10 +68,10 @@ Widget _notificationUI(AppNotification notif) {
 
   return Container(
     decoration: BoxDecoration(
-      color: const Color(0xffF5F5F5),
+      color: Theme.of(context).cardColor,
       borderRadius: BorderRadius.circular(12),
       boxShadow: [
-        BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 8),
+        BoxShadow(color: Theme.of(context).shadowColor, blurRadius: 8),
       ],
     ),
     child: Column(
@@ -110,9 +110,11 @@ Widget _notificationUI(AppNotification notif) {
                           const SizedBox(height: 2),
                           Text(
                             notif.message,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 12,
-                              color: Colors.black54,
+                              color: Theme.of(
+                                context,
+                              ).textTheme.bodyMedium!.color,
                             ),
                           ),
                         ],
