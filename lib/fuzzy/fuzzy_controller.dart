@@ -1,19 +1,20 @@
 import 'package:flutter/material.dart';
-import '../dummy_data.dart';
-import '../notification/notification_controller.dart';
-import '../notification/notification_model.dart';
+import 'package:agrinova/providers/sensor_provider.dart';
+import 'package:agrinova/notification/notification_controller.dart';
+import 'package:agrinova/notification/notification_model.dart';
 import 'dart:async';
 
 enum SystemMode { auto, semiAuto, manual }
 
 class FuzzyController extends ChangeNotifier {
-  late NotificationController notificationController;
+  NotificationController notificationController;
+  SensorProvider sensorProvider;
 
-  FuzzyController(this.notificationController) {
-    startTimer(); // 🔥 mulai otomatis
+  FuzzyController(this.notificationController, this.sensorProvider) {
+    startTimer();
   }
 
-  int interval = 1;
+  int interval = 600; // 10 menit = 600 detik
   Timer? _timer;
 
   void startTimer() {
@@ -90,10 +91,13 @@ class FuzzyController extends ChangeNotifier {
   String? lastRekomendasi;
 
   void updateFromSensor() {
-    DummyData.update();
-
-    ph = DummyData.ph;
-    tds = DummyData.tds;
+    if (sensorProvider.latestData == null) return;
+    
+    // Gunakan pH dari sensor
+    ph = sensorProvider.latestData!.phValue; 
+    tds = sensorProvider.latestData!.tdsPPM;
+    double suhu = sensorProvider.latestData!.airTemp;
+    double ketinggianAir = 12.0; // Default karena API tidak memberikan ini
 
     evaluateFuzzy();
 
@@ -110,7 +114,7 @@ class FuzzyController extends ChangeNotifier {
       ekstremSent = false;
     }
 
-    if (DummyData.ketinggianAir < 9 && !airKritisSent) {
+    if (ketinggianAir < 9 && !airKritisSent) {
       notificationController.addNotification(
         "Air Kritis",
         "Segera isi tangki!",
@@ -119,11 +123,11 @@ class FuzzyController extends ChangeNotifier {
       airKritisSent = true;
     }
 
-    if (DummyData.ketinggianAir >= 9) {
+    if (ketinggianAir >= 9) {
       airKritisSent = false;
     }
 
-    if ((DummyData.ph < 5.8 || DummyData.ph > 7.2) && !phWarningSent) {
+    if ((ph < 5.8 || ph > 7.2) && !phWarningSent) {
       notificationController.addNotification(
         "pH Tidak Normal",
         "Nilai pH di luar batas ideal",
@@ -132,7 +136,7 @@ class FuzzyController extends ChangeNotifier {
       phWarningSent = true;
     }
 
-    if (DummyData.ph >= 5.8 && DummyData.ph <= 7.2) {
+    if (ph >= 5.8 && ph <= 7.2) {
       phWarningSent = false;
     }
 
@@ -149,7 +153,7 @@ class FuzzyController extends ChangeNotifier {
       tdsWarningSent = false;
     }
 
-    if (DummyData.suhu > 30 && !suhuWarningSent) {
+    if (suhu > 30 && !suhuWarningSent) {
       notificationController.addNotification(
         "Suhu Tinggi",
         "Suhu terlalu panas (>30°C)",
@@ -158,7 +162,7 @@ class FuzzyController extends ChangeNotifier {
       suhuWarningSent = true;
     }
 
-    if (DummyData.suhu <= 30) {
+    if (suhu <= 30) {
       suhuWarningSent = false;
     }
   }

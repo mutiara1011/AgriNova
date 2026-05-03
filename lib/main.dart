@@ -1,25 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'dummy_data.dart';
+import 'providers/sensor_provider.dart';
+import 'providers/calibration_provider.dart';
 import 'bottom_nav.dart';
 import 'fuzzy/fuzzy_controller.dart';
 import 'notification/notification_controller.dart';
 import 'settings/theme_controller.dart';
 
 void main() {
-  DummyData.start();
-
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => NotificationController()),
         ChangeNotifierProvider(create: (_) => ThemeController()),
+        ChangeNotifierProvider(create: (_) => SensorProvider()),
+        ChangeNotifierProvider(create: (_) => CalibrationProvider()..fetchCalibrationData()),
 
-        ChangeNotifierProxyProvider<NotificationController, FuzzyController>(
+        ChangeNotifierProxyProvider2<NotificationController, SensorProvider, FuzzyController>(
           create: (context) =>
-              FuzzyController(context.read<NotificationController>()),
-          update: (context, notif, previous) {
+              FuzzyController(context.read<NotificationController>(), context.read<SensorProvider>()),
+          update: (context, notif, sensor, previous) {
             previous!.notificationController = notif;
+            previous.sensorProvider = sensor;
             return previous;
           },
         ),

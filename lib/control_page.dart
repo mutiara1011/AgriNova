@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'fuzzy/fuzzy_controller.dart';
-import 'dummy_data.dart';
+import 'providers/sensor_provider.dart';
+import 'providers/calibration_provider.dart';
 import 'dart:async';
 import '../notification/notification_controller.dart';
 import '../notification/notification_widget.dart';
@@ -23,8 +24,8 @@ class _ControlPageState extends State<ControlPage> {
   bool autoKipas = true;
   bool autoAerator = true;
 
-  double tdsValue = DummyData.tds;
-  int suhuTarget = DummyData.suhu.toInt();
+  double tdsValue = 800;
+  int suhuTarget = 28;
   int durasiAerator = 2;
 
   late Timer timer;
@@ -32,14 +33,15 @@ class _ControlPageState extends State<ControlPage> {
   @override
   void initState() {
     super.initState();
-
     timer = Timer.periodic(const Duration(seconds: 3), (_) {
       if (!mounted) return;
-
-      setState(() {
-        tdsValue = DummyData.tds;
-        suhuTarget = DummyData.suhu.toInt();
-      });
+      final sensor = context.read<SensorProvider>().latestData;
+      if (sensor != null) {
+        setState(() {
+          tdsValue = sensor.tdsPPM;
+          suhuTarget = sensor.airTemp.toInt();
+        });
+      }
     });
   }
 
@@ -52,6 +54,7 @@ class _ControlPageState extends State<ControlPage> {
   @override
   Widget build(BuildContext context) {
     final fuzzy = context.watch<FuzzyController>();
+    final calibration = context.watch<CalibrationProvider>();
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -93,7 +96,8 @@ class _ControlPageState extends State<ControlPage> {
                 ],
               ),
             ),
-
+            const SizedBox(height: 16),
+            _calibrationCard(calibration),
             const SizedBox(height: 16),
             _switchCard(fuzzy),
             const SizedBox(height: 16),
@@ -108,7 +112,49 @@ class _ControlPageState extends State<ControlPage> {
     );
   }
 
-  // ================= SWITCH CARD =================
+  Widget _calibrationCard(CalibrationProvider calibration) {
+    return Card(
+      color: Theme.of(context).cardColor,
+      elevation: 8,
+      shadowColor: Theme.of(context).shadowColor,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: const [
+                Icon(Icons.tune, color: Colors.blue),
+                SizedBox(width: 8),
+                Text("Pengaturan Node API", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
+              ],
+            ),
+          ),
+          const Divider(thickness: 1.2),
+          _switchTile(
+            'Live Mode (5s update)',
+            calibration.calibrationData?.liveMode ?? false,
+            (v) async {
+              await calibration.toggleLiveMode();
+              context.read<SensorProvider>().fetchLatestData();
+            },
+            calibration.isLoading,
+            false,
+          ),
+          const Divider(thickness: 1.2),
+          _switchTile(
+            'Mute Buzzer',
+            calibration.calibrationData?.muteBuzzer ?? false,
+            (v) => calibration.toggleMuteBuzzer(),
+            calibration.isLoading,
+            false,
+          ),
+          const SizedBox(height: 8),
+        ],
+      ),
+    );
+  }
+
   Widget _switchCard(FuzzyController fuzzy) {
     return Card(
       color: Theme.of(context).cardColor,
@@ -173,14 +219,11 @@ class _ControlPageState extends State<ControlPage> {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: disabled ? Colors.grey : Colors.black,
+                    color: disabled ? Colors.grey : Theme.of(context).textTheme.bodyMedium!.color,
                   ),
                 ),
                 if (isOverride)
-                  const Text(
-                    "Override aktif",
-                    style: TextStyle(fontSize: 12, color: Colors.orange),
-                  ),
+                  const Text("Override aktif", style: TextStyle(fontSize: 12, color: Colors.orange)),
               ],
             ),
           ),
@@ -189,9 +232,7 @@ class _ControlPageState extends State<ControlPage> {
             onChanged: disabled ? null : onChanged,
             thumbColor: WidgetStateProperty.all(Colors.white),
             trackColor: WidgetStateProperty.resolveWith((states) {
-              if (states.contains(WidgetState.selected)) {
-                return const Color(0xff03AF55);
-              }
+              if (states.contains(WidgetState.selected)) return const Color(0xff03AF55);
               return const Color(0xff767A78);
             }),
             trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
@@ -201,7 +242,6 @@ class _ControlPageState extends State<ControlPage> {
     );
   }
 
-  // ================= POMPA =================
   Widget _pompaCard(FuzzyController fuzzy) {
     return Card(
       color: Theme.of(context).cardColor,
@@ -212,32 +252,21 @@ class _ControlPageState extends State<ControlPage> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            _autoHeader(
-              'Pompa Nutrisi (TDS)',
-              autoPompa,
-              (v) => setState(() => autoPompa = v),
-              fuzzy.isAuto,
-            ),
+            _autoHeader('Pompa Nutrisi (TDS)', autoPompa, (v) => setState(() => autoPompa = v), fuzzy.isAuto),
             Slider(
-              value: tdsValue,
+              value: tdsValue.clamp(500, 1200),
               min: 500,
               max: 1200,
               activeColor: const Color(0xff03AF55),
-              onChanged: (autoPompa || fuzzy.isAuto)
-                  ? null
-                  : (v) => setState(() => tdsValue = v),
+              onChanged: (autoPompa || fuzzy.isAuto) ? null : (v) => setState(() => tdsValue = v),
             ),
-            Align(
-              alignment: Alignment.centerRight,
-              child: Text('${tdsValue.toInt()} PPM'),
-            ),
+            Align(alignment: Alignment.centerRight, child: Text('${tdsValue.toInt()} PPM')),
           ],
         ),
       ),
     );
   }
 
-  // ================= KIPAS =================
   Widget _kipasCard(FuzzyController fuzzy) {
     return Card(
       color: Theme.of(context).cardColor,
@@ -248,19 +277,12 @@ class _ControlPageState extends State<ControlPage> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            _autoHeader(
-              'Kipas Pendingin',
-              autoKipas,
-              (v) => setState(() => autoKipas = v),
-              fuzzy.isAuto,
-            ),
+            _autoHeader('Kipas Pendingin', autoKipas, (v) => setState(() => autoKipas = v), fuzzy.isAuto),
             const SizedBox(height: 10),
             TextField(
               enabled: !autoKipas && !fuzzy.isAuto,
               decoration: const InputDecoration(border: OutlineInputBorder()),
-              controller: TextEditingController(
-                text: DummyData.suhu.toStringAsFixed(1),
-              ),
+              controller: TextEditingController(text: suhuTarget.toString()),
               onChanged: (v) => suhuTarget = int.tryParse(v) ?? suhuTarget,
             ),
           ],
@@ -269,7 +291,6 @@ class _ControlPageState extends State<ControlPage> {
     );
   }
 
-  // ================= AERATOR =================
   Widget _aeratorCard(FuzzyController fuzzy) {
     return Card(
       color: Theme.of(context).cardColor,
@@ -280,21 +301,12 @@ class _ControlPageState extends State<ControlPage> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            _autoHeader(
-              'Jadwal Aerator Harian',
-              autoAerator,
-              (v) => setState(() => autoAerator = v),
-              fuzzy.isAuto,
-            ),
+            _autoHeader('Jadwal Aerator Harian', autoAerator, (v) => setState(() => autoAerator = v), fuzzy.isAuto),
             const SizedBox(height: 8),
             DropdownButtonFormField<int>(
               initialValue: durasiAerator,
-              items: [1, 2, 3, 4]
-                  .map((e) => DropdownMenuItem(value: e, child: Text('$e jam')))
-                  .toList(),
-              onChanged: (!autoAerator && !fuzzy.isAuto)
-                  ? (v) => setState(() => durasiAerator = v ?? durasiAerator)
-                  : null,
+              items: [1, 2, 3, 4].map((e) => DropdownMenuItem(value: e, child: Text('$e jam'))).toList(),
+              onChanged: (!autoAerator && !fuzzy.isAuto) ? (v) => setState(() => durasiAerator = v ?? durasiAerator) : null,
             ),
           ],
         ),
@@ -302,19 +314,10 @@ class _ControlPageState extends State<ControlPage> {
     );
   }
 
-  // ================= AUTO HEADER =================
-  Widget _autoHeader(
-    String title,
-    bool value,
-    Function(bool) onChanged,
-    bool fuzzyAuto,
-  ) {
+  Widget _autoHeader(String title, bool value, Function(bool) onChanged, bool fuzzyAuto) {
     return Row(
       children: [
-        Text(
-          title,
-          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
-        ),
+        Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
         const Spacer(),
         GestureDetector(
           onTap: fuzzyAuto ? null : () => onChanged(!value),
@@ -324,20 +327,12 @@ class _ControlPageState extends State<ControlPage> {
                 width: 10,
                 height: 10,
                 decoration: BoxDecoration(
-                  color: fuzzyAuto
-                      ? Colors.grey.shade400
-                      : (value ? const Color(0xff03AF55) : Colors.grey),
+                  color: fuzzyAuto ? Colors.grey.shade400 : (value ? const Color(0xff03AF55) : Colors.grey),
                   shape: BoxShape.circle,
                 ),
               ),
               const SizedBox(width: 6),
-              Text(
-                'Auto',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: fuzzyAuto ? Colors.grey : Colors.black,
-                ),
-              ),
+              Text('Auto', style: TextStyle(fontSize: 12, color: fuzzyAuto ? Colors.grey : Theme.of(context).textTheme.bodyMedium!.color)),
             ],
           ),
         ),
@@ -345,16 +340,9 @@ class _ControlPageState extends State<ControlPage> {
     );
   }
 
-  // ================= WARNING =================
   Widget _warningCard(BuildContext context) {
     final notif = context.watch<NotificationController>();
-
-    if (notif.notifications.isEmpty) {
-      return const SizedBox();
-    }
-
-    final latest = notif.notifications.first;
-
-    return NotificationCard(notif: latest);
+    if (notif.notifications.isEmpty) return const SizedBox();
+    return NotificationCard(notif: notif.notifications.first);
   }
 }

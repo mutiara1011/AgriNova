@@ -4,7 +4,6 @@ import '../fuzzy/fuzzy_controller.dart';
 import 'settings_helper.dart';
 import 'about_page.dart';
 import 'package:agrinova/notification/notification_controller.dart';
-import 'package:agrinova/dummy_data.dart';
 import 'theme_controller.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -18,6 +17,8 @@ class _SettingsPageState extends State<SettingsPage> {
   bool notifikasi = true;
   bool modeGelap = false;
   int intervalFuzzy = 5;
+  DateTime startDate = DateTime.now().subtract(const Duration(days: 13));
+  int get hst => DateTime.now().difference(startDate).inDays + 1;
 
   @override
   void initState() {
@@ -286,7 +287,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
           _ListItem('Jenis Tanaman', 'Selada Romaine'),
           Divider(),
-          _ListItem('Umur Tanam', '${DummyData.hst} HST'),
+          _ListItem('Umur Tanam', '$hst HST'),
           Divider(),
           _ListItem('pH Ideal', '5.5 – 6.5'),
           Divider(),
@@ -294,20 +295,20 @@ class _SettingsPageState extends State<SettingsPage> {
           ListTile(
             title: const Text("Tanggal Tanam"),
             subtitle: Text(
-              "${DummyData.startDate.day}/${DummyData.startDate.month}/${DummyData.startDate.year}",
+              "${startDate.day}/${startDate.month}/${startDate.year}",
             ),
             trailing: const Icon(Icons.calendar_today),
             onTap: () async {
               final picked = await showDatePicker(
                 context: context,
-                initialDate: DummyData.startDate,
+                initialDate: startDate,
                 firstDate: DateTime(2020),
                 lastDate: DateTime.now(),
               );
 
               if (picked != null) {
                 setState(() {
-                  DummyData.startDate = picked;
+                  startDate = picked;
                 });
               }
             },
