@@ -2,15 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/sensor_provider.dart';
 import 'providers/calibration_provider.dart';
+import 'providers/plant_provider.dart';
 import 'bottom_nav.dart';
 import 'fuzzy/fuzzy_controller.dart';
 import 'notification/notification_controller.dart';
 import 'settings/theme_controller.dart';
+import 'onboarding/plant_selection_page.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  final plantProvider = PlantProvider();
+  await plantProvider.loadData();
+
   runApp(
     MultiProvider(
       providers: [
+        ChangeNotifierProvider.value(value: plantProvider),
         ChangeNotifierProvider(create: (_) => NotificationController()),
         ChangeNotifierProvider(create: (_) => ThemeController()),
         ChangeNotifierProvider(create: (_) => SensorProvider()),
@@ -42,23 +50,51 @@ class MyApp extends StatelessWidget {
 
       home: Consumer<ThemeController>(
         builder: (context, themeController, _) {
-          return BottomNav();
+          return Consumer<PlantProvider>(
+            builder: (context, plant, _) {
+              if (plant.hasActivePlant) {
+                return const BottomNav();
+              } else {
+                return const PlantSelectionPage();
+              }
+            },
+          );
         },
       ),
 
       themeMode: context.watch<ThemeController>().themeMode,
 
       theme: ThemeData(
+        useMaterial3: true,
         brightness: Brightness.light,
-        scaffoldBackgroundColor: Colors.white,
-        primarySwatch: Colors.green,
+        scaffoldBackgroundColor: const Color(0xffF8FAF9),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xff03AF55),
+          primary: const Color(0xff03AF55),
+        ),
+        fontFamily: 'Inter',
+        cardTheme: CardThemeData(
+          elevation: 0,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          color: Colors.white,
+        ),
       ),
 
       darkTheme: ThemeData(
+        useMaterial3: true,
         brightness: Brightness.dark,
-        scaffoldBackgroundColor: Colors.black,
-        cardColor: const Color(0xff24252A),
-        shadowColor: const Color(0xff767A78),
+        scaffoldBackgroundColor: const Color(0xff0F1115),
+        colorScheme: ColorScheme.fromSeed(
+          brightness: Brightness.dark,
+          seedColor: const Color(0xff03AF55),
+          surface: const Color(0xff1A1D23),
+        ),
+        fontFamily: 'Inter',
+        cardTheme: CardThemeData(
+          elevation: 0,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          color: const Color(0xff1A1D23),
+        ),
       ),
     );
   }

@@ -15,13 +15,13 @@ class TdsPoint {
 class CalibrationData {
   final double waterTempOffset;
   final List<TdsPoint> tdsPoints;
-  final bool liveMode;
+  final bool liveModeActive;
   final bool muteBuzzer;
 
   CalibrationData({
     required this.waterTempOffset,
     required this.tdsPoints,
-    required this.liveMode,
+    required this.liveModeActive,
     required this.muteBuzzer,
   });
 
@@ -32,7 +32,7 @@ class CalibrationData {
     return CalibrationData(
       waterTempOffset: (json['waterTempOffset'] ?? 0.0).toDouble(),
       tdsPoints: pointsList,
-      liveMode: json['liveMode'] ?? false,
+      liveModeActive: json['liveModeActive'] ?? false,
       muteBuzzer: json['muteBuzzer'] ?? false,
     );
   }

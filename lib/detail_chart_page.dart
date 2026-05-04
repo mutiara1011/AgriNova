@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:agrinova/dashboard_page.dart';
 import 'package:agrinova/providers/sensor_provider.dart';
 import 'package:agrinova/models/sensor_data.dart';
 import 'package:intl/intl.dart';
@@ -24,7 +23,6 @@ class SensorType {
   });
 }
 
-// Urutan sama persis dengan sensor grid dan chart slider di dashboard
 final List<SensorType> sensorTypes = [
   SensorType(id: "waterLevel", label: "Ketinggian Air", category: "LEVEL", icon: Icons.water, unit: "cm", color: const Color(0xff0ea5e9)),
   SensorType(id: "airTemp", label: "Suhu Udara", category: "ATMOSFER", icon: Icons.device_thermostat, unit: "°C", color: const Color(0xfff97316)),
@@ -57,7 +55,6 @@ class _DetailChartPageState extends State<DetailChartPage> {
   }
 
   void _refreshAnalysis() {
-    // Sama seperti web client: endDate berupa ISO string agar rentang 24 jam ke belakang presisi dari waktu saat ini
     final endDateStr = focusDate.toUtc().toIso8601String();
     context.read<SensorProvider>().fetchAnalysisData(timeRange: activeRange, endDate: endDateStr);
   }
@@ -69,14 +66,11 @@ class _DetailChartPageState extends State<DetailChartPage> {
       } else if (activeRange == "1w") {
         focusDate = focusDate.add(Duration(days: direction * 7));
       } else if (activeRange == "1m") {
-        // Pertahankan komponen jam/menit saat geser bulan
         focusDate = DateTime(
           focusDate.year, focusDate.month + direction, focusDate.day,
           focusDate.hour, focusDate.minute, focusDate.second
         );
       }
-
-      // Jangan izinkan endDate melebihi waktu sekarang (sama seperti web)
       if (focusDate.isAfter(DateTime.now())) {
         focusDate = DateTime.now();
       }
@@ -108,12 +102,13 @@ class _DetailChartPageState extends State<DetailChartPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text("Detail Grafik", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
+        title: const Text("Analisis Parameter", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 20, color: Colors.white)),
         centerTitle: true,
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        backgroundColor: Colors.transparent,
         elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -121,169 +116,145 @@ class _DetailChartPageState extends State<DetailChartPage> {
           ),
         ],
       ),
-      body: Consumer<SensorProvider>(
-        builder: (context, provider, child) {
-          final stats = provider.analysisStats;
-          final analysisHistory = provider.analysisData;
-          final dashboardHistory = provider.historyData;
-          final latestData = provider.latestData;
-          final trend = _getTrend(analysisHistory);
-
-          return Column(
-            children: [
-              _buildSensorSelector(),
-              Expanded(
-                child: SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 12),
-                      // --- BAGIAN 1: Grafik Realtime (seperti Dashboard) ---
-                      _buildDashboardChart(dashboardHistory, latestData),
-                      const SizedBox(height: 28),
-                      // --- BAGIAN 2: Tren Analitik (1D/1W/1M) ---
-                      _buildAnalyticsSection(provider, analysisHistory, stats, trend),
-                      const SizedBox(height: 40),
-                    ],
-                  ),
-                ),
+      body: Stack(
+        children: [
+          AnimatedContainer(
+            duration: const Duration(seconds: 1),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  activeSensor.color.withValues(alpha: 0.8),
+                  activeSensor.color.withValues(alpha: 0.4),
+                  Theme.of(context).scaffoldBackgroundColor,
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                stops: const [0.0, 0.2, 0.5],
               ),
-            ],
-          );
-        },
+            ),
+          ),
+          Consumer<SensorProvider>(
+            builder: (context, provider, child) {
+              final stats = provider.analysisStats;
+              final history = provider.analysisData;
+              final latestData = provider.latestData;
+              final trend = _getTrend(history);
+
+              return SafeArea(
+                child: Column(
+                  children: [
+                    _buildSensorSelector(),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        physics: const BouncingScrollPhysics(),
+                        padding: const EdgeInsets.fromLTRB(20, 10, 20, 30),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildHeroHeader(latestData),
+                            const SizedBox(height: 24),
+                            _buildAnalyticsCard(provider, history, trend),
+                            const SizedBox(height: 24),
+                            _buildInsightCard(latestData, stats),
+                            const SizedBox(height: 24),
+                            _buildStatsGrid(stats),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ],
       ),
     );
   }
 
-  // ============================================================
-  // BAGIAN 1: Grafik Realtime dari Dashboard
-  // ============================================================
-  Widget _buildDashboardChart(List<SensorData> history, SensorData? latestData) {
-    String currentValue = "--";
+  Widget _buildHeroHeader(SensorData? latestData) {
+    String value = "--";
     if (latestData != null) {
-      final selector = _getSelector(activeSensor.id);
-      final val = selector(latestData);
-      currentValue = (activeSensor.id == "phValue") ? val.toStringAsFixed(2) : val.toStringAsFixed(1);
-      if (activeSensor.unit.isNotEmpty) currentValue = "$currentValue ${activeSensor.unit}";
+      final val = _getSelector(activeSensor.id)(latestData);
+      value = (activeSensor.id == "phValue") ? val.toStringAsFixed(2) : val.toStringAsFixed(1);
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Row(
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(activeSensor.icon, size: 22, color: activeSensor.color),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(activeSensor.category, style: TextStyle(fontSize: 11, color: Colors.grey.shade500, fontWeight: FontWeight.w800, letterSpacing: 1.5)),
-                  Text("Grafik ${activeSensor.label}", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
-                ],
-              ),
+            Text(
+              activeSensor.label.toUpperCase(),
+              style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 2),
+            ),
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                Text(
+                  value,
+                  style: const TextStyle(color: Colors.white, fontSize: 42, fontWeight: FontWeight.w900),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  activeSensor.unit,
+                  style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ],
             ),
           ],
         ),
-        const SizedBox(height: 16),
         Container(
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Theme.of(context).cardColor,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 15, offset: const Offset(0, 6)),
-            ],
+            color: Colors.white.withValues(alpha: 0.2),
+            shape: BoxShape.circle,
+            border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 2),
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: chartItem(
-              activeSensor.category, 
-              activeSensor.label, 
-              currentValue,
-              activeSensor.color, 
-              history, 
-              _getSelector(activeSensor.id),
-            ),
-          ),
+          child: Icon(activeSensor.icon, color: Colors.white, size: 32),
         ),
-      ],
-    );
-  }
-
-  // ============================================================
-  // BAGIAN 2: Tren Analitik (1D/1W/1M + Ringkasan Statistik)
-  // ============================================================
-  Widget _buildAnalyticsSection(SensorProvider provider, List<SensorData> analysisHistory, Map<String, dynamic> stats, Map<String, dynamic> trend) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Header + Range Selector
-        _buildHeaderWithRange(),
-        const SizedBox(height: 16),
-        // Time Navigator
-        _buildTimeNavigator(),
-        // Analytics Chart Card
-        _buildAnalyticsChartCard(provider, analysisHistory, trend),
-        const SizedBox(height: 24),
-        // Stats Grid
-        _buildStatsGrid(stats),
       ],
     );
   }
 
   Widget _buildSensorSelector() {
     return Container(
-      height: 64,
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      height: 80,
+      margin: const EdgeInsets.symmetric(vertical: 10),
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         itemCount: sensorTypes.length,
         itemBuilder: (context, index) {
           final s = sensorTypes[index];
           final isActive = activeSensor.id == s.id;
           return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 12),
+            padding: const EdgeInsets.only(right: 12),
             child: InkWell(
               onTap: () {
-                setState(() {
-                  activeSensor = s;
-                });
+                setState(() => activeSensor = s);
                 _refreshAnalysis();
               },
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(20),
               child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                duration: const Duration(milliseconds: 300),
+                padding: const EdgeInsets.symmetric(horizontal: 20),
                 decoration: BoxDecoration(
-                  color: isActive ? s.color.withValues(alpha: 0.1) : Colors.transparent,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: isActive ? s.color : Colors.transparent,
-                    width: 1.5,
-                  ),
+                  color: isActive ? Colors.white : Colors.white.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: isActive ? [BoxShadow(color: s.color.withValues(alpha: 0.3), blurRadius: 10, offset: const Offset(0, 4))] : [],
                 ),
                 child: Row(
                   children: [
-                    Icon(s.icon, size: 18, color: isActive ? s.color : Colors.grey.shade400),
-                    const SizedBox(width: 8),
+                    Icon(s.icon, size: 20, color: isActive ? s.color : Colors.white.withValues(alpha: 0.7)),
+                    const SizedBox(width: 10),
                     Text(
                       s.label,
                       style: TextStyle(
-                        color: isActive ? s.color : Colors.grey.shade500,
-                        fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
-                        fontSize: 13,
+                        color: isActive ? Colors.black : Colors.white.withValues(alpha: 0.7),
+                        fontWeight: isActive ? FontWeight.w900 : FontWeight.w600,
+                        fontSize: 14,
                       ),
                     ),
                   ],
@@ -296,325 +267,191 @@ class _DetailChartPageState extends State<DetailChartPage> {
     );
   }
 
-  Widget _buildHeaderWithRange() {
-    final ranges = [
-      {"id": "1d", "label": "1D"},
-      {"id": "1w", "label": "1W"},
-      {"id": "1m", "label": "1M"},
-    ];
+  bool get _isDemoMode => activeSensor.id == "waterLevel";
 
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text("TREN ANALITIK", style: TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.w800, letterSpacing: 1.5)),
-              const SizedBox(height: 2),
-              Text(
-                "${activeSensor.label} Overview",
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(width: 8),
-        Container(
-          padding: const EdgeInsets.all(4),
-          decoration: BoxDecoration(
-            color: Colors.grey.withValues(alpha: 0.05),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
-          ),
-          child: Row(
-            children: ranges.map((r) {
-              final isActive = activeRange == r["id"];
-              return InkWell(
-                onTap: () {
-                  setState(() {
-                    activeRange = r["id"]!;
-                    focusDate = DateTime.now();
-                  });
-                  _refreshAnalysis();
-                },
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: isActive ? Colors.white : Colors.transparent,
-                    borderRadius: BorderRadius.circular(8),
-                    boxShadow: isActive ? [
-                      BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2))
-                    ] : [],
-                  ),
-                  child: Text(
-                    r["label"]!,
-                    style: TextStyle(
-                      color: isActive ? Colors.black : Colors.grey.shade500,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildTimeNavigator() {
-    final canGoNext = focusDate.isBefore(DateTime.now().subtract(const Duration(hours: 1)));
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 20),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          _navBtn(Icons.chevron_left, () => _changePeriod(-1)),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Text(
-              _getDateLabel(),
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
-            ),
-          ),
-          const SizedBox(width: 16),
-          _navBtn(Icons.chevron_right, canGoNext ? () => _changePeriod(1) : null),
-        ],
-      ),
-    );
-  }
-
-  Widget _navBtn(IconData icon, VoidCallback? onPressed) {
-    final isDisabled = onPressed == null;
-    return InkWell(
-      onTap: onPressed,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: Theme.of(context).cardColor,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
-        ),
-        child: Icon(icon, size: 20, color: isDisabled ? Colors.grey.shade300 : Colors.black),
-      ),
-    );
-  }
-
-  Widget _buildAnalyticsChartCard(SensorProvider provider, List<SensorData> history, Map<String, dynamic> trend) {
-    final trendVal = trend['value'] as double;
-    final isUp = trend['isUp'] as bool;
+  List<SensorData> _getDisplayHistory(List<SensorData> realHistory) {
+    if (!_isDemoMode) return realHistory;
     
-    double chartWidth = history.length * 60.0;
-    final screenWidth = MediaQuery.of(context).size.width - 64;
-    if (chartWidth < screenWidth) chartWidth = screenWidth;
+    return List.generate(15, (i) {
+      final time = focusDate.subtract(Duration(hours: 14 - i));
+      double baseVal = 25.0;
+      double variance = 2.0;
+      
+      if (activeSensor.id == "waterLevel") { baseVal = 12.0; variance = 0.5; }
+      else if (activeSensor.id == "airTemp") { baseVal = 28.0; variance = 3.0; }
+      else if (activeSensor.id == "phValue") { baseVal = 6.5; variance = 0.3; }
+      else if (activeSensor.id == "tdsPPM") { baseVal = 700; variance = 50; }
+      
+      final val = baseVal + (variance * (i % 3 == 0 ? 0.5 : -0.2)) + (i * 0.02);
+      
+      return SensorData(
+        deviceId: "DEMO",
+        airTemp: activeSensor.id == "airTemp" ? val : 0,
+        airHumidity: activeSensor.id == "airHumidity" ? val : 0,
+        waterTemp: activeSensor.id == "waterTemp" ? val : 0,
+        lightLux: activeSensor.id == "lightLux" ? val : 0,
+        tdsPPM: activeSensor.id == "tdsPPM" ? val : 0,
+        phValue: (activeSensor.id == "phValue" || activeSensor.id == "waterLevel") ? val : 0,
+        isRealtime: false,
+        systemState: 0,
+        createdAt: time,
+      );
+    });
+  }
 
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 20, offset: const Offset(0, 8)),
-        ],
-        border: Border.all(color: Colors.grey.withValues(alpha: 0.05)),
-      ),
+  Widget _buildAnalyticsCard(SensorProvider provider, List<SensorData> history, Map<String, dynamic> trend) {
+    final displayHistory = _getDisplayHistory(history);
+    final trendData = _isDemoMode ? {"value": 2.4, "isUp": true} : trend;
+    final trendVal = trendData['value'] as double;
+    final isUp = trendData['isUp'] as bool;
+    
+    return _PremiumCard(
+      padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text("Trend Analitik", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
-              if (trendVal > 0)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: (isUp ? Colors.green : Colors.red).withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(isUp ? Icons.arrow_upward : Icons.arrow_downward, size: 14, color: isUp ? Colors.green : Colors.red),
-                      const SizedBox(width: 4),
-                      Text(
-                        "${trendVal.toStringAsFixed(1)}%",
-                        style: TextStyle(color: isUp ? Colors.green : Colors.red, fontWeight: FontWeight.w800, fontSize: 12),
-                      ),
-                    ],
-                  ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Text("Tren Historis", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
+                        if (_isDemoMode) 
+                          Container(
+                            margin: const EdgeInsets.only(left: 8),
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(color: Colors.amber.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4)),
+                            child: const Text("DEMO", style: TextStyle(color: Colors.amber, fontSize: 8, fontWeight: FontWeight.w900)),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(_getDateLabel(), style: TextStyle(fontSize: 12, color: Colors.grey.shade500, fontWeight: FontWeight.w600)),
+                  ],
                 ),
+              ),
+              _buildRangeSelector(),
             ],
           ),
+          const SizedBox(height: 28),
+          _buildTimeNavigator(),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 250,
+            child: provider.isLoading 
+              ? const Center(child: CircularProgressIndicator()) 
+              : _buildModernChart(displayHistory),
+          ),
           const SizedBox(height: 24),
-          provider.isLoading
-            ? Container(
-                height: 250,
-                alignment: Alignment.center,
-                child: const CircularProgressIndicator(color: Color(0xff03AF55)),
-              )
-            : history.isEmpty
-              ? Container(
-                  height: 250,
-                  alignment: Alignment.center,
-                  child: const Text("Tidak ada data untuk periode ini", style: TextStyle(color: Colors.grey)),
-                )
-              : SizedBox(
-                  height: 320,
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildFixedYAxis(history),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          physics: const BouncingScrollPhysics(),
-                          child: Container(
-                            width: chartWidth,
-                            height: 320,
-                            padding: const EdgeInsets.only(right: 20, bottom: 10),
-                            child: _buildAnalyticsLineChart(history),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+          if (trendVal > 0) _buildTrendIndicator(trendVal, isUp),
         ],
       ),
     );
   }
 
-  // Kunci agar sama persis dengan web (Recharts): Gunakan Index-Based Categorical X-Axis
-  // Setiap data point diletakkan pada x = 0, 1, 2, 3... sehingga jarak antar titik selalu sama.
-  List<FlSpot> _indexSpots(List<SensorData> history) {
-    final selector = _getSelector(activeSensor.id);
-    List<FlSpot> spots = [];
-    for (int i = 0; i < history.length; i++) {
-      spots.add(FlSpot(i.toDouble(), selector(history[i])));
-    }
-    return spots;
-  }
-
-  // Hitung Y range dari spots
-  Map<String, double> _calcYRange(List<FlSpot> spots) {
-    double minY = 0, maxY = 100;
-    if (spots.isNotEmpty) {
-      minY = spots.map((s) => s.y).reduce((a, b) => a < b ? a : b);
-      maxY = spots.map((s) => s.y).reduce((a, b) => a > b ? a : b);
-    }
-    if (maxY == minY) { maxY += 10; minY -= 10; }
-    else {
-      final range = maxY - minY;
-      maxY += range * 0.15;
-      minY -= range * 0.15;
-    }
-    if (minY < 0) minY = 0;
-    return {"minY": minY, "maxY": maxY};
-  }
-
-  Widget _buildFixedYAxis(List<SensorData> history) {
-    final spots = _indexSpots(history);
-    if (spots.isEmpty) return const SizedBox(width: 55);
-
-    final yr = _calcYRange(spots);
-    final minY = yr["minY"]!;
-    final maxY = yr["maxY"]!;
-    
-    const int divisions = 6;
-    final double interval = (maxY - minY) / 5;
-
+  Widget _buildRangeSelector() {
+    final ranges = ["1d", "1w", "1m"];
     return Container(
-      width: 55,
-      margin: const EdgeInsets.only(bottom: 38, top: 8),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: List.generate(divisions, (index) {
-          double val = maxY - (index * interval);
-          String label = (activeSensor.id == "phValue") ? val.toStringAsFixed(1) : val.toInt().toString();
-          return Text(
-            "$label${activeSensor.unit}",
-            style: TextStyle(fontSize: 10, color: Colors.grey.shade600, fontWeight: FontWeight.w800),
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: Colors.grey.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: ranges.map((r) {
+          final isActive = activeRange == r;
+          return GestureDetector(
+            onTap: () {
+              setState(() {
+                activeRange = r;
+                focusDate = DateTime.now();
+              });
+              _refreshAnalysis();
+            },
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: isActive ? Colors.white : Colors.transparent,
+                borderRadius: BorderRadius.circular(10),
+                boxShadow: isActive ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4)] : [],
+              ),
+              child: Text(
+                r.toUpperCase(),
+                style: TextStyle(
+                  color: isActive ? Colors.black : Colors.grey,
+                  fontWeight: isActive ? FontWeight.w900 : FontWeight.w600,
+                  fontSize: 11,
+                ),
+              ),
+            ),
           );
-        }),
+        }).toList(),
       ),
     );
   }
 
-  Widget _buildAnalyticsLineChart(List<SensorData> history) {
+  Widget _buildTimeNavigator() {
+    final canGoNext = focusDate.isBefore(DateTime.now().subtract(const Duration(hours: 1)));
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        _navCircleBtn(Icons.chevron_left, () => _changePeriod(-1)),
+        const Text("Geser untuk melihat periode lain", style: TextStyle(fontSize: 11, color: Colors.grey, fontStyle: FontStyle.italic)),
+        _navCircleBtn(Icons.chevron_right, canGoNext ? () => _changePeriod(1) : null),
+      ],
+    );
+  }
+
+  Widget _navCircleBtn(IconData icon, VoidCallback? onTap) {
+    final isDisabled = onTap == null;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(15),
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: isDisabled ? Colors.transparent : activeSensor.color.withValues(alpha: 0.1),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(icon, size: 20, color: isDisabled ? Colors.grey.shade300 : activeSensor.color),
+      ),
+    );
+  }
+
+  Widget _buildModernChart(List<SensorData> history) {
+    if (history.isEmpty) return const Center(child: Text("Data tidak tersedia"));
+    
     final validHistory = history.where((d) => d.createdAt != null).toList();
     final spots = _indexSpots(validHistory);
-    if (spots.isEmpty) return const SizedBox();
-
     final yr = _calcYRange(spots);
-    final minY = yr["minY"]!;
-    final maxY = yr["maxY"]!;
-
-    // Tentukan berapa banyak titik yang harus dilewati agar label X tidak menumpuk
-    // Mirip dengan auto-skip ticks di web
-    double xLabelInterval;
-    if (spots.length <= 6) {
-      xLabelInterval = 1;
-    } else {
-      xLabelInterval = (spots.length / 6).ceilToDouble();
-    }
+    
+    double xLabelInterval = (spots.length / 5).ceilToDouble();
+    if (xLabelInterval < 1) xLabelInterval = 1;
 
     return LineChart(
       LineChartData(
         lineTouchData: LineTouchData(
           handleBuiltInTouches: true,
-          getTouchedSpotIndicator: (LineChartBarData barData, List<int> spotIndexes) {
-            return spotIndexes.map((index) {
-              return TouchedSpotIndicatorData(
-                FlLine(color: Colors.grey.withValues(alpha: 0.3), strokeWidth: 1, dashArray: [3, 3]),
-                FlDotData(
-                  show: true,
-                  getDotPainter: (spot, percent, barData, index) => FlDotCirclePainter(
-                    radius: 4,
-                    color: activeSensor.color,
-                    strokeWidth: 2,
-                    strokeColor: Colors.white,
-                  ),
-                ),
-              );
-            }).toList();
-          },
           touchTooltipData: LineTouchTooltipData(
-            fitInsideHorizontally: true,
-            fitInsideVertically: true,
-            tooltipMargin: 16,
-            tooltipPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            tooltipRoundedRadius: 8,
-            getTooltipColor: (spot) => Theme.of(context).cardColor,
+            getTooltipColor: (spot) => activeSensor.color,
+            tooltipRoundedRadius: 12,
+            tooltipPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             getTooltipItems: (touchedSpots) => touchedSpots.map((s) {
-              final index = s.x.toInt();
-              if (index < 0 || index >= validHistory.length) return null;
-              final date = validHistory[index].createdAt!;
-              
-              // Format tooltip sesuai rentang waktu (sama dengan web)
-              String timeLabel;
-              if (activeRange == "1d") {
-                timeLabel = DateFormat('HH:mm').format(date);
-              } else {
-                timeLabel = DateFormat('d MMM').format(date);
-              }
-
+              final date = validHistory[s.x.toInt()].createdAt!;
+              final timeLabel = activeRange == "1d" ? DateFormat('HH:mm').format(date) : DateFormat('d MMM').format(date);
               return LineTooltipItem(
                 "$timeLabel\n",
-                const TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.normal),
+                const TextStyle(color: Colors.white70, fontSize: 10),
                 children: [
                   TextSpan(
                     text: "${s.y.toStringAsFixed(activeSensor.id == "phValue" ? 2 : 1)} ${activeSensor.unit}",
-                    style: TextStyle(color: activeSensor.color, fontWeight: FontWeight.bold, fontSize: 13),
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
                   ),
                 ],
               );
@@ -624,72 +461,166 @@ class _DetailChartPageState extends State<DetailChartPage> {
         gridData: FlGridData(
           show: true,
           drawVerticalLine: false,
-          horizontalInterval: (maxY - minY) / 5 > 0 ? (maxY - minY) / 5 : 1,
-          getDrawingHorizontalLine: (v) => FlLine(color: Colors.grey.withValues(alpha: 0.1), strokeWidth: 1, dashArray: [3, 3]),
+          horizontalInterval: (yr["maxY"]! - yr["minY"]!) / 4 > 0 ? (yr["maxY"]! - yr["minY"]!) / 4 : 1,
+          getDrawingHorizontalLine: (v) => FlLine(color: Colors.grey.withValues(alpha: 0.08), strokeWidth: 1, dashArray: [4, 4]),
         ),
         titlesData: FlTitlesData(
-          leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          leftTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 45,
+              interval: (yr["maxY"]! - yr["minY"]!) / 4 > 0 ? (yr["maxY"]! - yr["minY"]!) / 4 : 1,
+              getTitlesWidget: (v, m) {
+                if (v == m.max || v == m.min) return const SizedBox();
+                return Text(
+                  activeSensor.id == "phValue" ? v.toStringAsFixed(1) : v.toInt().toString(),
+                  style: TextStyle(fontSize: 10, color: Colors.grey.shade600, fontWeight: FontWeight.bold),
+                );
+              },
+            ),
+          ),
           bottomTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
-              reservedSize: 40,
               interval: xLabelInterval,
-              getTitlesWidget: (val, meta) {
-                final index = val.toInt();
-                // Hanya render teks jika indeks valid
-                if (index < 0 || index >= validHistory.length) return const SizedBox();
+              getTitlesWidget: (v, m) {
+                final idx = v.toInt();
+                if (idx < 0 || idx >= validHistory.length) return const SizedBox();
+                if (idx % xLabelInterval.toInt() != 0 && idx != validHistory.length - 1) return const SizedBox();
                 
-                // Pastikan yang dirender hanya titik sesuai interval untuk mencegah text overlapping di indeks lain yang ter-draw otomatis
-                if (index % xLabelInterval.toInt() != 0 && index != validHistory.length - 1 && index != 0) {
-                  return const SizedBox();
-                }
-
-                final date = validHistory[index].createdAt!;
-                String label;
-
-                // Format sesuai web
-                if (activeRange == "1d") {
-                  label = DateFormat('HH:mm').format(date);
-                } else {
-                  label = DateFormat('d MMM').format(date);
-                }
-
-                return SideTitleWidget(
-                  axisSide: meta.axisSide,
-                  space: 8,
+                final date = validHistory[idx].createdAt!;
+                return Padding(
+                  padding: const EdgeInsets.only(top: 10.0),
                   child: Text(
-                    label,
-                    style: TextStyle(fontSize: 10, color: Colors.grey.shade600, fontWeight: FontWeight.w600),
+                    activeRange == "1d" ? DateFormat('HH:mm').format(date) : DateFormat('d MMM').format(date),
+                    style: TextStyle(fontSize: 9, color: Colors.grey.shade500, fontWeight: FontWeight.bold),
                   ),
                 );
               },
             ),
           ),
+          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
         ),
-        clipData: const FlClipData.none(),
         borderData: FlBorderData(show: false),
         minX: 0,
         maxX: (validHistory.length - 1).toDouble(),
-        minY: minY,
-        maxY: maxY,
+        minY: yr["minY"],
+        maxY: yr["maxY"],
         lineBarsData: [
           LineChartBarData(
             spots: spots,
             isCurved: true,
-            curveSmoothness: 0.35,
+            curveSmoothness: 0.3,
             color: activeSensor.color,
-            barWidth: 3,
+            barWidth: 4,
             isStrokeCapRound: true,
             dotData: const FlDotData(show: false),
             belowBarData: BarAreaData(
               show: true,
               gradient: LinearGradient(
-                colors: [activeSensor.color.withValues(alpha: 0.4), activeSensor.color.withValues(alpha: 0)],
+                colors: [activeSensor.color.withValues(alpha: 0.25), activeSensor.color.withValues(alpha: 0)],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTrendIndicator(double val, bool isUp) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: (isUp ? Colors.green : Colors.red).withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(15),
+      ),
+      child: Row(
+        children: [
+          Icon(isUp ? Icons.trending_up : Icons.trending_down, color: isUp ? Colors.green : Colors.red, size: 20),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              "Tren ${isUp ? 'meningkat' : 'menurun'} sebesar ${val.toStringAsFixed(1)}% dari awal periode.",
+              style: TextStyle(fontSize: 12, color: isUp ? Colors.green.shade700 : Colors.red.shade700, fontWeight: FontWeight.w600),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInsightCard(SensorData? latestData, Map<String, dynamic> stats) {
+    String insight = "Memuat analisis...";
+    Color insightColor = activeSensor.color;
+    IconData insightIcon = Icons.auto_awesome;
+
+    if (_isDemoMode) {
+      insight = "Ketinggian air terjaga stabil di 12cm. Sistem akan otomatis mengisi jika di bawah 8cm.";
+      insightColor = Colors.green;
+    } else if (latestData != null) {
+      final val = _getSelector(activeSensor.id)(latestData);
+      switch (activeSensor.id) {
+        case "phValue":
+          if (val >= 6.0 && val <= 7.0) {
+            insight = "Tingkat pH sangat ideal untuk penyerapan nutrisi selada.";
+            insightColor = Colors.green;
+          } else if (val < 6.0) {
+            insight = "pH terlalu asam. Pertimbangkan untuk menambah cairan pH Up.";
+            insightColor = Colors.orange;
+            insightIcon = Icons.warning_amber_rounded;
+          } else {
+            insight = "pH terlalu basa. Gunakan pH Down untuk menyeimbangkannya.";
+            insightColor = Colors.orange;
+            insightIcon = Icons.warning_amber_rounded;
+          }
+          break;
+        case "tdsPPM":
+          if (val >= 560 && val <= 840) {
+            insight = "Kadar nutrisi (TDS) berada pada rentang optimal untuk fase pertumbuhan.";
+            insightColor = Colors.green;
+          } else if (val < 560) {
+            insight = "Nutrisi kurang pekat. Tanaman mungkin membutuhkan tambahan nutrisi AB Mix.";
+            insightColor = Colors.blue;
+          } else {
+            insight = "Nutrisi terlalu pekat. Bisa menyebabkan ujung daun terbakar (tip burn).";
+            insightColor = Colors.red;
+          }
+          break;
+        case "waterTemp":
+          if (val >= 18 && val <= 24) {
+            insight = "Suhu air dingin dan kaya oksigen. Sangat baik untuk akar.";
+            insightColor = Colors.green;
+          } else if (val > 24) {
+            insight = "Suhu air mulai hangat. Oksigen terlarut mungkin menurun.";
+            insightColor = Colors.orange;
+          }
+          break;
+        default:
+          insight = "Parameter ${activeSensor.label} terpantau stabil dalam 24 jam terakhir.";
+      }
+    }
+
+    return _PremiumCard(
+      color: insightColor.withValues(alpha: 0.1),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(color: insightColor.withValues(alpha: 0.2), shape: BoxShape.circle),
+            child: Icon(insightIcon, color: insightColor, size: 24),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text("Smart Insight", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14)),
+                const SizedBox(height: 4),
+                Text(insight, style: TextStyle(fontSize: 13, color: Colors.grey.shade700, fontWeight: FontWeight.w500)),
+              ],
             ),
           ),
         ],
@@ -703,11 +634,8 @@ class _DetailChartPageState extends State<DetailChartPage> {
 
     double min, max, avg;
 
-    // Ketinggian air belum ada dari API, gunakan nilai placeholder
-    if (sensorId == "waterLevel") {
-      min = 12.0;
-      max = 12.0;
-      avg = 12.0;
+    if (_isDemoMode) {
+      min = 11.8; max = 12.4; avg = 12.1;
     } else {
       min = (stats['min$capitalizedId'] ?? 0.0).toDouble();
       max = (stats['max$capitalizedId'] ?? 0.0).toDouble();
@@ -717,52 +645,35 @@ class _DetailChartPageState extends State<DetailChartPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text("Ringkasan Statistik", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+        const Text("Ringkasan Statistik", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
         const SizedBox(height: 16),
         Row(
           children: [
-            Expanded(child: _statCard("Terendah", min, activeSensor.unit, Colors.red, Icons.arrow_downward)),
+            Expanded(child: _statTile("Minimum", min, Icons.arrow_downward, Colors.red)),
             const SizedBox(width: 12),
-            Expanded(child: _statCard("Tertinggi", max, activeSensor.unit, Colors.green, Icons.arrow_upward)),
+            Expanded(child: _statTile("Maksimum", max, Icons.arrow_upward, Colors.green)),
+            const SizedBox(width: 12),
+            Expanded(child: _statTile("Rata-rata", avg, Icons.analytics, Colors.blue)),
           ],
         ),
-        const SizedBox(height: 12),
-        _statCard("Rata-rata Periode", avg, activeSensor.unit, Colors.blue, Icons.analytics, isWide: true),
       ],
     );
   }
 
-  Widget _statCard(String label, double value, String unit, Color color, IconData icon, {bool isWide = false}) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
-      ),
+  Widget _statTile(String label, double val, IconData icon, Color color) {
+    return _PremiumCard(
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(icon, size: 16, color: color),
-              const SizedBox(width: 8),
-              Text(label, style: TextStyle(fontSize: 11, color: Colors.grey.shade500, fontWeight: FontWeight.w700, letterSpacing: 0.5)),
-            ],
+          Icon(icon, size: 16, color: color),
+          const SizedBox(height: 8),
+          Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.w700)),
+          const SizedBox(height: 4),
+          Text(
+            val.toStringAsFixed(activeSensor.id == "phValue" ? 2 : 1),
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
           ),
-          const SizedBox(height: 12),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
-            children: [
-              Text(
-                value.toStringAsFixed(activeSensor.id == "phValue" ? 2 : 1),
-                style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900),
-              ),
-              const SizedBox(width: 4),
-              Text(unit, style: TextStyle(fontSize: 14, color: Colors.grey.shade400, fontWeight: FontWeight.w500)),
-            ],
-          ),
+          Text(activeSensor.unit, style: const TextStyle(fontSize: 10, color: Colors.grey)),
         ],
       ),
     );
@@ -770,7 +681,7 @@ class _DetailChartPageState extends State<DetailChartPage> {
 
   double Function(SensorData) _getSelector(String id) {
     switch (id) {
-      case "waterLevel": return (d) => 12.0; // Placeholder - belum ada sensor fisik
+      case "waterLevel": return (d) => 12.0;
       case "airTemp": return (d) => d.airTemp;
       case "airHumidity": return (d) => d.airHumidity;
       case "waterTemp": return (d) => d.waterTemp;
@@ -779,5 +690,55 @@ class _DetailChartPageState extends State<DetailChartPage> {
       case "phValue": return (d) => d.phValue;
       default: return (d) => d.tdsPPM;
     }
+  }
+
+  List<FlSpot> _indexSpots(List<SensorData> history) {
+    final selector = _getSelector(activeSensor.id);
+    return List.generate(history.length, (i) => FlSpot(i.toDouble(), selector(history[i])));
+  }
+
+  Map<String, double> _calcYRange(List<FlSpot> spots) {
+    if (spots.isEmpty) return {"minY": 0, "maxY": 10};
+    double minY = spots.map((s) => s.y).reduce((a, b) => a < b ? a : b);
+    double maxY = spots.map((s) => s.y).reduce((a, b) => a > b ? a : b);
+    
+    if (maxY == minY) { 
+       maxY += 5; minY -= 5; 
+    } else {
+       final range = maxY - minY;
+       maxY += range * 0.2;
+       minY -= range * 0.2;
+    }
+    
+    if (minY < 0 && activeSensor.id != "airTemp" && activeSensor.id != "waterTemp") minY = 0;
+    return {"minY": minY, "maxY": maxY};
+  }
+}
+
+class _PremiumCard extends StatelessWidget {
+  final Widget child;
+  final Color? color;
+  final EdgeInsetsGeometry? padding;
+
+  const _PremiumCard({required this.child, this.color, this.padding});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: padding ?? const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: color ?? Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 25,
+            offset: const Offset(0, 12),
+          ),
+        ],
+        border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 1),
+      ),
+      child: child,
+    );
   }
 }

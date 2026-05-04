@@ -9,25 +9,49 @@ class NotificationPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final notif = context.watch<NotificationController>();
+    final list = notif.notifications.reversed.toList();
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text("Notifikasi"),
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: true,
+        title: const Text(
+          'NOTIFIKASI',
+          style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18, letterSpacing: 0.5, color: Colors.white),
+        ),
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: notif.notifications.length,
-        itemBuilder: (context, index) {
-          final n = notif.notifications[index];
-
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: NotificationCard(notif: n),
-          );
-        },
+      body: Stack(
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  const Color(0xff03AF55).withValues(alpha: 0.8),
+                  const Color(0xff03AF55).withValues(alpha: 0.4),
+                  Theme.of(context).scaffoldBackgroundColor,
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                stops: const [0.0, 0.2, 0.5],
+              ),
+            ),
+          ),
+          list.isEmpty
+              ? const Center(child: Text("Tidak ada notifikasi", style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)))
+              : ListView.separated(
+                  padding: EdgeInsets.fromLTRB(16, MediaQuery.of(context).padding.top + 70, 16, 40),
+                  itemCount: list.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 12),
+                  itemBuilder: (context, index) {
+                    return NotificationCard(notif: list[index]);
+                  },
+                ),
+        ],
       ),
     );
+
   }
 }

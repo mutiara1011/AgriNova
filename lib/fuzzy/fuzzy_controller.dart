@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:agrinova/providers/sensor_provider.dart';
 import 'package:agrinova/notification/notification_controller.dart';
 import 'package:agrinova/notification/notification_model.dart';
@@ -9,10 +11,52 @@ enum SystemMode { auto, semiAuto, manual }
 class FuzzyController extends ChangeNotifier {
   NotificationController notificationController;
   SensorProvider sensorProvider;
+  static const String _fuzzyLogKey = 'fuzzy_log';
 
   FuzzyController(this.notificationController, this.sensorProvider) {
+    _loadFuzzyLog();
     startTimer();
   }
+
+  Future<void> _loadFuzzyLog() async {
+    final prefs = await SharedPreferences.getInstance();
+    final logStr = prefs.getString(_fuzzyLogKey);
+    if (logStr != null) {
+      final List decoded = jsonDecode(logStr);
+      logRekomendasi = decoded.map((e) {
+        return {
+          "title": e["title"],
+          "desc": e["desc"],
+          "time": DateTime.parse(e["time"]),
+        };
+      }).toList();
+      if (logRekomendasi.isNotEmpty) {
+        lastRekomendasi = logRekomendasi.first["title"];
+      }
+      notifyListeners();
+    }
+  }
+
+  Future<void> _saveFuzzyLog() async {
+    final prefs = await SharedPreferences.getInstance();
+    final list = logRekomendasi.map((e) {
+      return {
+        "title": e["title"],
+        "desc": e["desc"],
+        "time": (e["time"] as DateTime).toIso8601String(),
+      };
+    }).toList();
+    await prefs.setString(_fuzzyLogKey, jsonEncode(list));
+  }
+
+  void clearFuzzyLog() async {
+    logRekomendasi.clear();
+    lastRekomendasi = null;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_fuzzyLogKey);
+    notifyListeners();
+  }
+
 
   int interval = 600; // 10 menit = 600 detik
   Timer? _timer;
@@ -272,6 +316,7 @@ class FuzzyController extends ChangeNotifier {
       }
 
       lastRekomendasi = rekomendasi;
+      _saveFuzzyLog();
     }
 
     kipasAktif = ph > 7;

@@ -3,32 +3,71 @@ import 'package:provider/provider.dart';
 import 'fuzzy_controller.dart';
 import 'fuzzy_history_page.dart';
 import 'fuzzy_info_page.dart';
+import 'package:agrinova/providers/sensor_provider.dart';
 
-class FuzzyPage extends StatelessWidget {
+class FuzzyPage extends StatefulWidget {
   const FuzzyPage({super.key});
+
+  @override
+  State<FuzzyPage> createState() => _FuzzyPageState();
+}
+
+class _FuzzyPageState extends State<FuzzyPage> {
+  Future<void> _onRefresh() async {
+    final sensor = context.read<SensorProvider>();
+    await sensor.fetchLatestData();
+    if (mounted) {
+      context.read<FuzzyController>().updateFromSensor();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBodyBehindAppBar: true,
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: _appBar(context),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: const [
-            _FuzzyStatusCard(),
-            SizedBox(height: 16),
-            _ConditionCard(),
-            SizedBox(height: 16),
-            _MembershipCard(),
-            SizedBox(height: 16),
-            _RuleCard(),
-            SizedBox(height: 16),
-            _RecommendationCard(),
-            SizedBox(height: 16),
-            _HistoryCard(),
-          ],
+      body: RefreshIndicator(
+        onRefresh: _onRefresh,
+        color: const Color(0xff03AF55),
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: EdgeInsets.fromLTRB(16, MediaQuery.of(context).padding.top + 70, 16, 120),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _sectionTitle("Overview Fuzzy"),
+              const SizedBox(height: 12),
+              const _FuzzyStatusCard(),
+              const SizedBox(height: 24),
+              _sectionTitle("Detail Kondisi"),
+              const SizedBox(height: 12),
+              const _ConditionCard(),
+              const SizedBox(height: 24),
+              _sectionTitle("Membership Function"),
+              const SizedBox(height: 12),
+              const _MembershipCard(),
+              const SizedBox(height: 24),
+              _sectionTitle("Inferensi Aturan"),
+              const SizedBox(height: 12),
+              const _RuleCard(),
+              const SizedBox(height: 24),
+              _sectionTitle("Log Aktivitas"),
+              const SizedBox(height: 12),
+              const _HistoryCard(),
+            ],
+          ),
         ),
+      ),
+    );
+  }
+
+  Widget _sectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 8),
+      child: Text(
+        title.toUpperCase(),
+        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: Colors.grey.shade500, letterSpacing: 1),
       ),
     );
   }
@@ -36,33 +75,19 @@ class FuzzyPage extends StatelessWidget {
   // ================= APP BAR =================
   AppBar _appBar(BuildContext context) {
     return AppBar(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: Colors.transparent,
       elevation: 0,
       centerTitle: true,
-      title: Text(
-        'FUZZY LOGIC',
-        style: TextStyle(
-          fontWeight: FontWeight.bold,
-          color: Theme.of(context).textTheme.bodyMedium!.color,
-        ),
+      title: const Text(
+        'ANALISIS FUZZY',
+        style: TextStyle(fontWeight: FontWeight.w900, fontSize: 20, letterSpacing: 0.5),
       ),
       actions: [
-        Padding(
-          padding: const EdgeInsets.only(right: 16),
-          child: GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const FuzzyInfoPage()),
-              );
-            },
-            child: const Icon(
-              Icons.info_outline,
-              size: 26,
-              color: Color(0xff03AF55),
-            ),
-          ),
+        IconButton(
+          onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FuzzyInfoPage())),
+          icon: const Icon(Icons.info_outline, color: Color(0xff03AF55)),
         ),
+        const SizedBox(width: 8),
       ],
     );
   }
@@ -78,39 +103,40 @@ class _FuzzyStatusCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final fuzzy = context.watch<FuzzyController>();
 
-    return Card(
-      color: Theme.of(context).cardColor,
-      elevation: 8,
-      shadowColor: Theme.of(context).shadowColor,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            Text(
-              'STATUS EVALUASI FUZZY',
-              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
-            ),
-            SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _Gauge(
-                  label: 'pH',
-                  value: fuzzy.ph.toStringAsFixed(1),
-                  status: fuzzy.statusPh,
-                ),
-                _Gauge(
-                  label: 'TDS',
-                  value: fuzzy.tds.toStringAsFixed(0),
-                  status: fuzzy.muTdsTinggi > fuzzy.muTdsRendah
-                      ? "Tinggi"
-                      : "Rendah",
-                ),
-              ],
-            ),
-          ],
-        ),
+    return _PremiumCard(
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(color: const Color(0xff03AF55).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
+                child: const Icon(Icons.speed_rounded, color: Color(0xff03AF55), size: 20),
+              ),
+              const SizedBox(width: 12),
+              const Text('STATUS EVALUASI', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14)),
+            ],
+          ),
+          const SizedBox(height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _Gauge(
+                label: 'pH Air',
+                value: fuzzy.ph.toStringAsFixed(1),
+                status: fuzzy.statusPh,
+                color: Colors.teal,
+              ),
+              Container(width: 1, height: 40, color: Colors.grey.withValues(alpha: 0.2)),
+              _Gauge(
+                label: 'Nutrisi TDS',
+                value: fuzzy.tds.toStringAsFixed(0),
+                status: fuzzy.muTdsTinggi > fuzzy.muTdsRendah ? "Tinggi" : "Rendah",
+                color: Colors.deepPurple,
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -120,27 +146,21 @@ class _Gauge extends StatelessWidget {
   final String label;
   final String value;
   final String status;
+  final Color color;
 
-  const _Gauge({
-    required this.label,
-    required this.value,
-    required this.status,
-  });
+  const _Gauge({required this.label, required this.value, required this.status, required this.color});
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        const Icon(Icons.speed, size: 40, color: Color(0xff03AF55)),
-        const SizedBox(height: 6),
-        Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
-        Text(value),
-        Text(
-          status,
-          style: const TextStyle(
-            color: Color(0xff03AF55),
-            fontWeight: FontWeight.w500,
-          ),
+        Text(value, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: -1)),
+        Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey.shade500)),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
+          child: Text(status.toUpperCase(), style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w900)),
         ),
       ],
     );
@@ -157,89 +177,62 @@ class _ConditionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final fuzzy = context.watch<FuzzyController>();
 
-    return Card(
-      color: Theme.of(context).cardColor,
-      elevation: 8,
-      shadowColor: Theme.of(context).shadowColor,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            // HEADER
-            Row(
-              children: const [
-                Icon(Icons.analytics, color: Color(0xff03AF55)),
-                SizedBox(width: 8),
-                Text(
-                  'KONDISI SAAT INI',
-                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 16),
-
-            // GRID DETAIL
-            Row(
-              children: [
-                Expanded(
-                  child: _infoItem(
-                    context: context,
-                    title: "pH Air",
-                    value: fuzzy.ph.toStringAsFixed(1),
-                    status: fuzzy.statusPh,
-                  ),
-                ),
-                Expanded(
-                  child: _infoItem(
-                    title: "TDS",
-                    context: context,
-                    value: "${fuzzy.tds.toStringAsFixed(0)} PPM",
-                    status: fuzzy.statusNutrisi,
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 12),
-
-            Row(
-              children: [
-                Expanded(
-                  child: _infoItem(
-                    context: context,
-                    title: "Output Pompa",
-                    value: fuzzy.outputPompa.toStringAsFixed(1),
-                    status: "Crisp Value",
-                  ),
-                ),
-                Expanded(
-                  child: _infoItem(
-                    context: context,
-                    title: "Rekomendasi",
-                    value: fuzzy.rekomendasi,
-                    status: "",
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 12),
-
-            ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: LinearProgressIndicator(
-                value: (fuzzy.outputPompa / 100).clamp(0.0, 1.0),
-                minHeight: 8,
-                backgroundColor: Colors.grey.shade300,
-                valueColor: const AlwaysStoppedAnimation<Color>(
-                  Color(0xff03AF55),
+    return _PremiumCard(
+      padding: const EdgeInsets.all(24),
+      color: const Color(0xff03AF55),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(10)),
+                child: const Icon(Icons.analytics_outlined, color: Colors.white, size: 20),
+              ),
+              const SizedBox(width: 12),
+              const Text('KONDISI AKTUAL', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: Colors.white)),
+            ],
+          ),
+          const SizedBox(height: 24),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text("REKOMENDASI DOSIS", style: TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w900)),
+                    const SizedBox(height: 4),
+                    Text(fuzzy.rekomendasi, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900)),
+                  ],
                 ),
               ),
-            ),
-          ],
-        ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  const Text("OUTPUT", style: TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w900)),
+                  const SizedBox(height: 4),
+                  Text("${fuzzy.outputPompa.toStringAsFixed(1)}%", style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900)),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Stack(
+            children: [
+              Container(height: 6, decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(10))),
+              AnimatedContainer(
+                duration: const Duration(seconds: 1),
+                height: 6,
+                width: MediaQuery.of(context).size.width * (fuzzy.outputPompa / 100).clamp(0.0, 1.0) * 0.7,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(colors: [Colors.white38, Colors.white]),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -252,140 +245,256 @@ class _MembershipCard extends StatelessWidget {
   const _MembershipCard();
 
   String getStatus(FuzzyController fuzzy) {
-    if (fuzzy.muPhRendah > fuzzy.muPhNormal &&
-        fuzzy.muPhRendah > fuzzy.muPhTinggi) {
-      return "Asam";
-    } else if (fuzzy.muPhNormal > fuzzy.muPhTinggi) {
-      return "Normal";
-    } else {
-      return "Basa";
-    }
+    if (fuzzy.muPhRendah > fuzzy.muPhNormal && fuzzy.muPhRendah > fuzzy.muPhTinggi) return "ASAM";
+    if (fuzzy.muPhNormal > fuzzy.muPhTinggi) return "NORMAL";
+    return "BASA";
   }
 
   @override
   Widget build(BuildContext context) {
     final fuzzy = context.watch<FuzzyController>();
     final ph = fuzzy.ph;
-
     final status = getStatus(fuzzy);
-    final membership = fuzzy.muPhNormal;
 
-    return _baseCard(
-      context: context,
+    return _PremiumCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // HEADER
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Membership Function',
-                style: TextStyle(fontWeight: FontWeight.w600),
-              ),
+              const Text('DERAJAT KEANGGOTAAN (PH)', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13)),
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xff03AF55),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: const Text(
-                  'Live Data',
-                  style: TextStyle(color: Colors.white, fontSize: 12),
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(color: const Color(0xff03AF55).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
+                child: const Text('LIVE', style: TextStyle(color: Color(0xff03AF55), fontSize: 9, fontWeight: FontWeight.w900)),
               ),
             ],
           ),
-
-          const SizedBox(height: 4),
-          const Text(
-            'PARAMETER: PH AIR',
-            style: TextStyle(fontSize: 12, color: Colors.grey),
-          ),
-
+          const SizedBox(height: 30),
+          SizedBox(height: 100, width: double.infinity, child: CustomPaint(painter: _MembershipPainter(ph))),
           const SizedBox(height: 16),
-
-          // 🔥 GRAFIK SEDERHANA (CUSTOM PAINTER)
-          SizedBox(
-            height: 80,
-            width: double.infinity,
-            child: CustomPaint(painter: _MembershipPainter(ph)),
-          ),
-
-          const SizedBox(height: 8),
-
-          // LABEL BAWAH
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                '${fuzzy.muPhRendah.toStringAsFixed(2)} (Rendah)',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 10),
+              _muLabel('RENDAH', fuzzy.muPhRendah, Colors.red),
+              _muLabel('NORMAL', fuzzy.muPhNormal, Colors.green),
+              _muLabel('TINGGI', fuzzy.muPhTinggi, Colors.blue),
+            ],
+          ),
+          const SizedBox(height: 24),
+          Row(
+            children: [
+              _infoTile("Status Dominan", status, const Color(0xff03AF55)),
+              const SizedBox(width: 12),
+              _infoTile("Nilai Input", "${ph.toStringAsFixed(1)} pH", Colors.grey.shade700),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _muLabel(String label, double val, Color color) {
+    return Column(
+      children: [
+        Text(val.toStringAsFixed(2), style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: color)),
+        Text(label, style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: Colors.grey.shade500)),
+      ],
+    );
+  }
+
+  Widget _infoTile(String label, String val, Color color) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(color: Colors.grey.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(16)),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey)),
+            const SizedBox(height: 2),
+            Text(val, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: color)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+
+class _RuleCard extends StatelessWidget {
+  const _RuleCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final fuzzy = context.watch<FuzzyController>();
+
+    return _PremiumCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(color: const Color(0xff03AF55).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
+                child: const Icon(Icons.rule_rounded, color: Color(0xff03AF55), size: 20),
               ),
-              Text(
-                '${fuzzy.muPhNormal.toStringAsFixed(2)} (Normal)',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 10),
+              const SizedBox(width: 12),
+              const Text('INFERENSI RULE MAMDANI', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13)),
+            ],
+          ),
+          const SizedBox(height: 24),
+          _ruleItem(
+            context: context,
+            label: 'R1',
+            isActive: fuzzy.r1Active,
+            content: Wrap(
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 4,
+              runSpacing: 4,
+              children: [
+                const Text('IF pH', style: TextStyle(fontSize: 12)),
+                _chip('NORMAL', Colors.green),
+                const Text('AND TDS', style: TextStyle(fontSize: 12)),
+                _chip('RENDAH', Colors.green),
+                const Text('THEN POMPA', style: TextStyle(fontSize: 12)),
+                _chip('SEDANG', Colors.grey),
+              ],
+            ),
+            fireValue: fuzzy.r1.toStringAsFixed(2),
+          ),
+          const SizedBox(height: 12),
+          _ruleItem(
+            context: context,
+            label: 'R2',
+            isActive: fuzzy.r2 > 0,
+            content: const Text('IF pH RENDAH AND TDS RENDAH THEN POMPA TINGGI', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+            fireValue: fuzzy.r2.toStringAsFixed(2),
+          ),
+          const SizedBox(height: 12),
+          _ruleItem(
+            context: context,
+            label: 'R3',
+            isActive: fuzzy.r3Active,
+            content: const Text('IF pH TINGGI AND TDS TINGGI THEN POMPA RENDAH', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+            fireValue: fuzzy.r3.toStringAsFixed(2),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _ruleItem({required context, required String label, required bool isActive, required Widget content, String? fireValue}) {
+    return AnimatedOpacity(
+      duration: const Duration(milliseconds: 300),
+      opacity: isActive ? 1 : 0.4,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: isActive ? const Color(0xff03AF55).withValues(alpha: 0.05) : Colors.grey.withValues(alpha: 0.05),
+          borderRadius: BorderRadius.circular(16),
+          border: isActive ? Border.all(color: const Color(0xff03AF55).withValues(alpha: 0.2)) : null,
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 32, height: 32,
+              decoration: BoxDecoration(color: isActive ? const Color(0xff03AF55) : Colors.grey, shape: BoxShape.circle),
+              alignment: Alignment.center,
+              child: Text(label, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900)),
+            ),
+            const SizedBox(width: 12),
+            Expanded(child: content),
+            if (fireValue != null && isActive)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(color: const Color(0xff03AF55), borderRadius: BorderRadius.circular(6)),
+                child: Text(fireValue, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900)),
               ),
-              Text(
-                '${fuzzy.muPhTinggi.toStringAsFixed(2)} (Tinggi)',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 10),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _chip(String text, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4)),
+      child: Text(text, style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.w900)),
+    );
+  }
+}
+
+class _HistoryCard extends StatelessWidget {
+  const _HistoryCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final fuzzy = context.watch<FuzzyController>();
+    final logs = fuzzy.logRekomendasi.take(5).toList();
+
+    return _PremiumCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('LOG REKOMENDASI TERBARU', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13)),
+              TextButton(
+                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FuzzyHistoryPage())),
+                child: const Text('LIHAT SEMUA', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: Color(0xff03AF55))),
               ),
             ],
           ),
-
-          const SizedBox(height: 12),
-
-          // STATUS
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Theme.of(context).scaffoldBackgroundColor,
-              borderRadius: BorderRadius.circular(8),
+          const SizedBox(height: 4),
+          if (logs.isEmpty)
+            const Center(child: Padding(padding: EdgeInsets.all(20), child: Text("Belum ada riwayat", style: TextStyle(color: Colors.grey))))
+          else
+            ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: logs.length,
+              padding: EdgeInsets.zero,
+              separatorBuilder: (_, __) => const SizedBox(height: 6),
+              itemBuilder: (context, index) {
+                final log = logs[index];
+                return _logItem(context, log);
+              },
             ),
-            child: Text(
-              'Status Dominan: $status',
-              style: const TextStyle(
-                color: Color(0xff03AF55),
-                fontWeight: FontWeight.w600,
-              ),
+        ],
+      ),
+    );
+  }
+
+  Widget _logItem(BuildContext context, Map<String, dynamic> log) {
+    final time = log["time"] as DateTime;
+    final timeStr = "${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}";
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(color: Colors.grey.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(16)),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(color: const Color(0xff03AF55).withValues(alpha: 0.1), shape: BoxShape.circle),
+            child: const Icon(Icons.history_toggle_off_rounded, size: 16, color: Color(0xff03AF55)),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(log["title"], style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13)),
+                Text(log["desc"], style: TextStyle(fontSize: 11, color: Colors.grey.shade600, fontWeight: FontWeight.w500)),
+              ],
             ),
           ),
-
-          const SizedBox(height: 8),
-
-          // NILAI INPUT
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Theme.of(context).scaffoldBackgroundColor,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              '${ph.toStringAsFixed(1)} pH',
-              style: const TextStyle(fontWeight: FontWeight.w600),
-            ),
-          ),
-
-          const SizedBox(height: 8),
-
-          // DERAJAT KEANGGOTAAN
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Theme.of(context).scaffoldBackgroundColor,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              '${membership.toStringAsFixed(2)} µ(x)',
-              style: const TextStyle(fontWeight: FontWeight.w600),
-            ),
-          ),
+          Text(timeStr, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey.shade400)),
         ],
       ),
     );
@@ -397,436 +506,58 @@ class _MembershipPainter extends CustomPainter {
   _MembershipPainter(this.ph);
   @override
   void paint(Canvas canvas, Size size) {
-    final pointPaint = Paint()
-      ..color = Colors.black
-      ..style = PaintingStyle.fill;
+    final paintLine = Paint()..strokeWidth = 2..style = PaintingStyle.stroke;
+    final paintFill = Paint()..style = PaintingStyle.fill;
 
-    double x = (ph / 14) * size.width;
-    double y = size.height * 0.5;
+    // Drawing Shapes for Low, Mid, High
+    void drawTriangle(Color color, List<Offset> points) {
+      final path = Path()..addPolygon(points, true);
+      canvas.drawPath(path, paintFill..color = color.withValues(alpha: 0.1));
+      canvas.drawPath(path, paintLine..color = color.withValues(alpha: 0.3));
+    }
 
-    final paintLow = Paint()
-      ..color = Colors.red.withValues(alpha: 0.3)
-      ..style = PaintingStyle.fill;
+    drawTriangle(Colors.red, [Offset(0, size.height), Offset(size.width * 0.3, size.height), Offset(0, 0)]);
+    drawTriangle(Colors.green, [Offset(size.width * 0.2, size.height), Offset(size.width * 0.5, 0), Offset(size.width * 0.8, size.height)]);
+    drawTriangle(Colors.blue, [Offset(size.width * 0.7, size.height), Offset(size.width, size.height), Offset(size.width, 0)]);
 
-    final paintMid = Paint()
-      ..color = Colors.green.withValues(alpha: 0.3)
-      ..style = PaintingStyle.fill;
-
-    final paintHigh = Paint()
-      ..color = Colors.blue.withValues(alpha: 0.3)
-      ..style = PaintingStyle.fill;
-
-    // LOW
-    final low = Path()
-      ..moveTo(0, size.height)
-      ..lineTo(size.width * 0.3, size.height)
-      ..lineTo(size.width * 0.2, 0)
-      ..close();
-
-    // MID
-    final mid = Path()
-      ..moveTo(size.width * 0.2, size.height)
-      ..lineTo(size.width * 0.5, 0)
-      ..lineTo(size.width * 0.8, size.height)
-      ..close();
-
-    // HIGH
-    final high = Path()
-      ..moveTo(size.width * 0.7, size.height)
-      ..lineTo(size.width, size.height)
-      ..lineTo(size.width * 0.8, 0)
-      ..close();
-
-    canvas.drawPath(low, paintLow);
-    canvas.drawPath(mid, paintMid);
-    canvas.drawPath(high, paintHigh);
-    canvas.drawCircle(Offset(x, y), 4, pointPaint);
+    // Indicator
+    double x = (ph / 14).clamp(0.0, 1.0) * size.width;
+    canvas.drawLine(Offset(x, 0), Offset(x, size.height), paintLine..color = Colors.black..strokeWidth = 1.5);
+    canvas.drawCircle(Offset(x, size.height * 0.5), 4, paintFill..color = Colors.black);
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
 
-//
-// ================= RULE =================
-//
-class _RuleCard extends StatelessWidget {
-  const _RuleCard();
+class _PremiumCard extends StatelessWidget {
+  final Widget child;
+  final Color? color;
+  final EdgeInsetsGeometry? padding;
+
+  const _PremiumCard({required this.child, this.color, this.padding});
 
   @override
   Widget build(BuildContext context) {
-    final fuzzy = context.watch<FuzzyController>();
-
-    return _baseCard(
-      context: context,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Inferensi Rule Mamdani',
-            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
-          ),
-
-          const SizedBox(height: 16),
-
-          // R1 (AKTIF)
-          _ruleItem(
-            context: context,
-            label: 'R1',
-            isActive: fuzzy.r1Active,
-            content: Wrap(
-              crossAxisAlignment: WrapCrossAlignment.center,
-              spacing: 4,
-              runSpacing: 4,
-              children: [
-                const Text('IF pH adalah'),
-                _chip('Normal', Colors.green),
-                const Text('DAN TDS adalah'),
-                _chip('Rendah', Colors.green),
-                _chip('Tinggi', Colors.red),
-                const Text('THEN Dosis Pompa'),
-                _chip('Sedang', Colors.grey),
-              ],
-            ),
-
-            fireValue: fuzzy.r1.toStringAsFixed(2),
-          ),
-
-          const SizedBox(height: 12),
-
-          // R2 (TIDAK AKTIF)
-          _ruleItem(
-            context: context,
-            label: 'R2',
-            isActive: fuzzy.r2 > 0,
-            content: const Text(
-              'IF pH rendah DAN TDS rendah THEN Dosis Pompa tinggi',
-            ),
-            fireValue: fuzzy.r2.toStringAsFixed(2),
-          ),
-
-          const SizedBox(height: 12),
-
-          _ruleItem(
-            context: context,
-            label: 'R3',
-            isActive: fuzzy.r3Active,
-            content: const Text(
-              'IF pH tinggi DAN TDS tinggi THEN Dosis Pompa rendah',
-            ),
-            fireValue: fuzzy.r3.toStringAsFixed(2),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-Widget _ruleItem({
-  required context,
-  required String label,
-  required bool isActive,
-  required Widget content,
-  String? fireValue,
-}) {
-  return Opacity(
-    opacity: isActive ? 1 : 0.5,
-    child: Container(
-      padding: const EdgeInsets.all(12),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      padding: padding ?? const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // LABEL R1 / R2
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: isActive
-                  ? const Color(0xff03AF55).withValues(alpha: 0.15)
-                  : Colors.grey.withValues(alpha: 0.2),
-              shape: BoxShape.circle,
-            ),
-            child: Text(
-              label,
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                color: isActive ? const Color(0xff03AF55) : Colors.grey,
-              ),
-            ),
+        color: color ?? Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
           ),
-
-          const SizedBox(width: 12),
-
-          // CONTENT
-          Expanded(child: content),
-
-          // FIRE VALUE
-          if (fireValue != null)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: const Color(0xff03AF55).withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                'FIRE: $fireValue',
-                style: const TextStyle(
-                  color: Color(0xff03AF55),
-                  fontWeight: FontWeight.w600,
-                  fontSize: 12,
-                ),
-              ),
-            ),
         ],
-      ),
-    ),
-  );
-}
-
-Widget _chip(String text, Color color) {
-  return Container(
-    margin: const EdgeInsets.symmetric(horizontal: 4),
-    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-    decoration: BoxDecoration(
-      color: color.withValues(alpha: 0.15),
-      borderRadius: BorderRadius.circular(6),
-    ),
-    child: Text(
-      text,
-      style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w600),
-    ),
-  );
-}
-
-//
-// ================= REKOMENDASI =================
-//
-class _RecommendationCard extends StatelessWidget {
-  const _RecommendationCard();
-
-  @override
-  Widget build(BuildContext context) {
-    final fuzzy = context.watch<FuzzyController>();
-
-    return Card(
-      color: Theme.of(context).cardColor,
-      elevation: 8,
-      shadowColor: Theme.of(context).shadowColor,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11)),
-      child: ListTile(
-        leading: Icon(
-          fuzzy.pompaAktif ? Icons.warning : Icons.check_circle,
-          color: fuzzy.pompaAktif ? Colors.orange : const Color(0xff03AF55),
-        ),
-        title: const Text(
-          'REKOMENDASI',
-          style: TextStyle(fontWeight: FontWeight.w600),
-        ),
-        subtitle: Text(
-          '${fuzzy.rekomendasi} (${fuzzy.outputPompa.toStringAsFixed(1)})',
+        border: Border.all(
+          color: Colors.white.withValues(alpha: isDark ? 0.05 : 0.5),
+          width: 1.5,
         ),
       ),
-    );
-  }
-}
-
-//
-// ================= HISTORY =================
-//
-class _HistoryCard extends StatelessWidget {
-  const _HistoryCard();
-
-  @override
-  Widget build(BuildContext context) {
-    final fuzzy = context.watch<FuzzyController>();
-    final logs = fuzzy.logRekomendasi.take(5).toList();
-    return _baseCard(
-      context: context,
-      child: logs.isEmpty
-          ? const Center(child: Text("Belum ada data"))
-          : Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Log Rekomendasi',
-                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
-                ),
-
-                const SizedBox(height: 12),
-
-                Column(
-                  children: logs.map((log) {
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: _logItem(
-                        context: context,
-                        color: const Color(0xff03AF55),
-                        time: _formatTime(log["time"]),
-                        title: log["title"],
-                        desc: log["desc"],
-                      ),
-                    );
-                  }).toList(),
-                ),
-
-                const SizedBox(height: 16),
-
-                // BUTTON
-                Center(
-                  child: TextButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const FuzzyHistoryPage(),
-                        ),
-                      );
-                    },
-                    child: const Text(
-                      'Lihat Semua Riwayat',
-                      style: TextStyle(
-                        color: Color(0xff03AF55),
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-    );
-  }
-}
-
-String _formatTime(DateTime time) {
-  final diff = DateTime.now().difference(time);
-
-  if (diff.inSeconds < 60) return "Baru saja";
-  if (diff.inMinutes < 60) return "${diff.inMinutes} menit lalu";
-  if (diff.inHours < 24) return "${diff.inHours} jam lalu";
-
-  return "${time.day}/${time.month} ${time.hour}:${time.minute.toString().padLeft(2, '0')}";
-}
-
-Widget _logItem({
-  required context,
-  required Color color,
-  required String time,
-  required String title,
-  required String desc,
-}) {
-  return Container(
-    decoration: BoxDecoration(
-      color: Theme.of(context).scaffoldBackgroundColor,
-      borderRadius: BorderRadius.circular(10),
-    ),
-    child: Row(
-      children: [
-        // GARIS SAMPING
-        Container(
-          width: 4,
-          height: 70,
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(10),
-          ),
-        ),
-
-        const SizedBox(width: 10),
-
-        // TEXT
-        Expanded(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 10),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  time,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: color,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  title,
-                  style: const TextStyle(fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  desc,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Theme.of(context).textTheme.bodyMedium!.color,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    ),
-  );
-}
-
-Widget _infoItem({
-  required context,
-  required String title,
-  required String value,
-  required String status,
-}) {
-  return Container(
-    margin: const EdgeInsets.all(6),
-    padding: const EdgeInsets.all(12),
-    decoration: BoxDecoration(
-      color: Theme.of(context).scaffoldBackgroundColor,
-      borderRadius: BorderRadius.circular(10),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(title, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-        ),
-        if (status.isNotEmpty)
-          Text(
-            status,
-            style: const TextStyle(
-              fontSize: 12,
-              color: Color(0xff03AF55),
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-      ],
-    ),
-  );
-}
-
-//
-// ================= BASE CARD (BIAR KONSISTEN) =================
-//
-Widget _baseCard({
-  required BuildContext context,
-  required Widget child,
-  double minHeight = 120,
-}) {
-  return Card(
-    color: Theme.of(context).cardColor,
-    elevation: 8,
-    shadowColor: Theme.of(context).shadowColor,
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11)),
-    child: Container(
-      width: double.infinity,
-      constraints: BoxConstraints(minHeight: minHeight), // 🔥 KUNCI
-      padding: const EdgeInsets.all(16),
       child: child,
-    ),
-  );
+    );
+  }
 }

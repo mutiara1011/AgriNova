@@ -43,4 +43,20 @@ class SensorData {
                   : null)),
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'deviceId': deviceId,
+      'airTemp': airTemp,
+      'airHumidity': airHumidity,
+      'waterTemp': waterTemp,
+      'lightLux': lightLux,
+      'tdsPPM': tdsPPM,
+      'phValue': phValue,
+      'isRealtime': isRealtime,
+      'systemState': systemState,
+      'createdAt': createdAt?.toIso8601String(),
+    };
+  }
 }
+

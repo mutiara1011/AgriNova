@@ -6,153 +6,34 @@ class AboutPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBodyBehindAppBar: true,
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text("Tentang Aplikasi"),
-        centerTitle: true,
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        foregroundColor: Theme.of(context).textTheme.bodyMedium!.color,
+        backgroundColor: Colors.transparent,
         elevation: 0,
+        centerTitle: true,
+        title: const Text(
+          'TENTANG AGRINOVA',
+          style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18, letterSpacing: 0.5),
+        ),
       ),
-
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.fromLTRB(16, MediaQuery.of(context).padding.top + 70, 16, 40),
         child: Column(
           children: [
             _header(),
-
-            _section(
-              context,
-              "Deskripsi Aplikasi",
-              Icons.description,
-              "AGRINOVA adalah aplikasi mobile berbasis Flutter yang dirancang untuk membantu monitoring dan kontrol nutrisi hidroponik menggunakan metode Fuzzy Mamdani.",
-            ),
-
-            _section(
-              context,
-              "Latar Belakang",
-              Icons.school,
-              "Pengelolaan hidroponik membutuhkan pengawasan parameter seperti pH dan nutrisi (TDS). Namun, pengambilan keputusan secara manual seringkali tidak konsisten.\n\n"
-                  "Oleh karena itu, digunakan logika fuzzy untuk membantu sistem mengambil keputusan secara otomatis dan lebih fleksibel.",
-            ),
-
-            _section(
-              context,
-              "Tujuan Sistem",
-              Icons.flag,
-              "• Membantu monitoring kondisi tanaman\n"
-                  "• Mengotomatisasi pengambilan keputusan\n"
-                  "• Mengurangi kesalahan manusia\n"
-                  "• Meningkatkan efisiensi sistem hidroponik",
-            ),
-
-            _section(
-              context,
-              "Fitur Utama",
-              Icons.star,
-              "• Monitoring pH, TDS, suhu, dan kelembapan\n"
-                  "• Kontrol manual dan otomatis\n"
-                  "• Sistem rekomendasi berbasis fuzzy\n"
-                  "• Notifikasi kondisi sistem\n"
-                  "• Riwayat rekomendasi",
-            ),
-
-            _section(
-              context,
-              "Cara Menggunakan Aplikasi",
-              Icons.menu_book,
-              "1. Buka aplikasi AGRINOVA\n"
-                  "2. Lihat Dashboard untuk memantau kondisi tanaman\n"
-                  "3. Masuk ke halaman Kontrol untuk mengatur sistem\n"
-                  "4. Gunakan mode AUTO untuk kontrol otomatis berbasis fuzzy\n"
-                  "5. Gunakan mode MANUAL jika ingin kontrol langsung\n"
-                  "6. Periksa halaman Fuzzy untuk melihat proses dan hasil evaluasi\n"
-                  "7. Lihat notifikasi jika terjadi kondisi tidak normal\n"
-                  "8. Gunakan Settings untuk mengatur sistem sesuai kebutuhan",
-            ),
-
-            _section(
-              context,
-              "Mode Sistem",
-              Icons.tune,
-              "Aplikasi AGRINOVA menyediakan 3 mode pengoperasian sistem:\n\n"
-                  "1. AUTO (Fuzzy)\n"
-                  "Pada mode ini, sistem bekerja secara otomatis menggunakan metode Fuzzy Mamdani.\n"
-                  "Keputusan seperti mengaktifkan pompa atau menyesuaikan nutrisi akan dilakukan oleh sistem berdasarkan kondisi sensor.\n\n"
-                  "2. SEMI AUTO\n"
-                  "Pada mode ini, sistem tetap memberikan rekomendasi berdasarkan fuzzy, namun pengguna dapat menentukan apakah rekomendasi tersebut akan dijalankan atau tidak.\n\n"
-                  "3. MANUAL\n"
-                  "Pada mode ini, seluruh kontrol dilakukan oleh pengguna tanpa bantuan sistem fuzzy.\n"
-                  "Pengguna memiliki kendali penuh terhadap sistem.\n\n"
-                  "Mode ini memberikan fleksibilitas bagi pengguna sesuai kebutuhan dan tingkat pengalaman.",
-            ),
-
-            _section(
-              context,
-              "Penjelasan Menu",
-              Icons.dashboard,
-              "• Dashboard → Menampilkan kondisi sensor secara real-time\n"
-                  "• Kontrol → Mengatur pompa dan sistem secara manual/otomatis\n"
-                  "• Fuzzy → Menampilkan proses pengambilan keputusan sistem\n"
-                  "• Notifikasi → Informasi kondisi penting sistem\n"
-                  "• Settings → Pengaturan sistem dan aplikasi",
-            ),
-
-            _section(
-              context,
-              "Tips Penggunaan",
-              Icons.tips_and_updates,
-              "• Gunakan mode AUTO untuk hasil optimal\n"
-                  "• Pastikan sensor dalam kondisi baik\n"
-                  "• Perhatikan notifikasi sistem\n"
-                  "• Cek riwayat rekomendasi untuk analisis\n"
-                  "• Gunakan interval fuzzy sesuai kebutuhan",
-            ),
-
-            _section(
-              context,
-              "Teknologi yang Digunakan",
-              Icons.memory,
-              "• Flutter (Mobile App)\n"
-                  "• IoT Sensor (pH, TDS, suhu)\n"
-                  "• Fuzzy Mamdani (Decision Support System)\n"
-                  "• Provider (State Management)",
-            ),
-
-            _section(
-              context,
-              "Cara Kerja Sistem",
-              Icons.settings,
-              "1. Sensor membaca kondisi lingkungan\n"
-                  "2. Data dikirim ke aplikasi\n"
-                  "3. Sistem fuzzy memproses data\n"
-                  "4. Sistem menghasilkan rekomendasi\n"
-                  "5. User atau sistem mengeksekusi tindakan",
-            ),
-
-            _section(
-              context,
-              "Manfaat Sistem",
-              Icons.eco,
-              "• Monitoring lebih mudah\n"
-                  "• Pengambilan keputusan lebih akurat\n"
-                  "• Menghemat waktu dan tenaga\n"
-                  "• Meningkatkan kualitas tanaman",
-            ),
-
-            _section(
-              context,
-              "Pengembang",
-              Icons.person,
-              "Mutiara Sandi\nMahasiswa Informatika\nUniversitas Sultan Ageng Tirtayasa",
-            ),
-
-            const SizedBox(height: 16),
-
-            const Text(
-              "Versi 1.0.0",
-              style: TextStyle(fontSize: 12, color: Colors.grey),
-            ),
+            _section(context, "Deskripsi Aplikasi", Icons.description_rounded, "AGRINOVA adalah aplikasi monitoring dan kontrol nutrisi hidroponik berbasis kecerdasan buatan (Fuzzy Logic) untuk efisiensi budidaya modern."),
+            _section(context, "Latar Belakang", Icons.school_rounded, "Pengelolaan hidroponik membutuhkan pengawasan parameter seperti pH dan nutrisi (TDS). Logika fuzzy digunakan untuk membantu sistem mengambil keputusan secara otomatis dan lebih fleksibel dibanding kontrol manual."),
+            _section(context, "Tujuan Sistem", Icons.flag_rounded, "• Membantu monitoring kondisi tanaman\n• Mengotomatisasi pengambilan keputusan\n• Mengurangi kesalahan manusia\n• Meningkatkan efisiensi sistem hidroponik"),
+            _section(context, "Fitur Utama", Icons.star_rounded, "• Monitoring pH, TDS, suhu, dan kelembapan\n• Kontrol manual dan otomatis\n• Sistem rekomendasi berbasis fuzzy\n• Notifikasi kondisi sistem\n• Riwayat rekomendasi"),
+            _section(context, "Mode Sistem", Icons.tune_rounded, "1. AUTO (Fuzzy): Sistem bekerja otomatis penuh.\n2. SEMI AUTO: Sistem memberi rekomendasi, user mengeksekusi.\n3. MANUAL: Kontrol penuh oleh pengguna."),
+            _section(context, "Cara Kerja Sistem", Icons.settings_rounded, "1. Sensor membaca kondisi lingkungan\n2. Data dikirim ke aplikasi secara real-time\n3. Sistem fuzzy memproses data & menghasilkan rekomendasi\n4. Tindakan dieksekusi sesuai mode yang dipilih"),
+            _section(context, "Teknologi yang Digunakan", Icons.memory_rounded, "• Flutter SDK (Mobile Application)\n• IoT Sensor Node (pH, TDS, Temp)\n• Fuzzy Mamdani (Decision Support)\n• Provider (State Management)"),
+            _section(context, "Manfaat Sistem", Icons.eco_rounded, "• Monitoring lebih mudah & akurat\n• Menghemat waktu dan tenaga\n• Meningkatkan kualitas dan stabilitas tanaman"),
+            _section(context, "Pengembang", Icons.person_pin_rounded, "MUTIARA SANDI\nInformatika - Universitas Sultan Ageng Tirtayasa"),
+            const SizedBox(height: 24),
+            const Text("VERSION 1.0.0 (BETA)", style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey, letterSpacing: 2)),
+            const SizedBox(height: 40),
           ],
         ),
       ),
@@ -162,53 +43,61 @@ class AboutPage extends StatelessWidget {
   Widget _header() {
     return Column(
       children: [
-        Image.asset('assets/images/logo.png', height: 70),
-        SizedBox(height: 5),
-        Text(
-          "AGRINOVA",
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.1),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: Image.asset('assets/images/logo.png', height: 80),
         ),
-        SizedBox(height: 4),
-        Text(
-          "Smart Hydroponic Monitoring System",
-          style: TextStyle(color: Colors.grey),
-        ),
-        SizedBox(height: 16),
+        const SizedBox(height: 20),
+        const Text("AGRINOVA", style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: 2)),
+        const Text("SMART HYDROPONIC SOLUTION", style: TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1)),
+        const SizedBox(height: 40),
       ],
     );
   }
 
-  Widget _section(
-    BuildContext context,
-    String title,
-    IconData icon,
-    String content,
-  ) {
+  Widget _section(BuildContext context, String title, IconData icon, String content) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+        border: Border.all(
+          color: Colors.white.withValues(alpha: isDark ? 0.05 : 0.5),
+          width: 1.5,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(icon, color: const Color(0xff03AF55)),
-              const SizedBox(width: 8),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 16,
-                ),
-              ),
+              Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: const Color(0xff03AF55).withValues(alpha: 0.1), shape: BoxShape.circle), child: Icon(icon, color: const Color(0xff03AF55), size: 22)),
+              const SizedBox(width: 16),
+              Text(title, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
             ],
           ),
-          const SizedBox(height: 10),
-          Text(content, style: const TextStyle(height: 1.5)),
+          const SizedBox(height: 16),
+          Text(content, style: TextStyle(height: 1.6, fontSize: 13, color: Colors.grey.shade600, fontWeight: FontWeight.w500)),
         ],
       ),
     );

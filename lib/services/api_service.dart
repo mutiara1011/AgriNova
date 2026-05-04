@@ -9,9 +9,12 @@ class ApiService {
 
   // --- SENSORS API ---
 
-  Future<SensorData?> getLatestSensorData() async {
+  Future<SensorData?> getLatestSensorData({int? t}) async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/sensors/latest?deviceId=$deviceId'));
+      var url = '$baseUrl/sensors/latest?deviceId=$deviceId';
+      if (t != null) url += '&t=$t';
+      
+      final response = await http.get(Uri.parse(url));
       if (response.statusCode == 200) {
         final json = jsonDecode(response.body);
         return SensorData.fromJson(json['data'] ?? json); // Support wrapper or direct
@@ -87,12 +90,15 @@ class ApiService {
     }
   }
 
-  Future<bool> toggleLiveMode() async {
+  Future<bool> toggleLiveMode(bool liveModeActive) async {
     try {
       final response = await http.put(
         Uri.parse('$baseUrl/calibration/live-mode'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({"deviceId": deviceId}),
+        body: jsonEncode({
+          "deviceId": deviceId,
+          "liveModeActive": liveModeActive,
+        }),
       );
       return response.statusCode == 200;
     } catch (e) {
@@ -101,12 +107,15 @@ class ApiService {
     }
   }
 
-  Future<bool> toggleMuteBuzzer() async {
+  Future<bool> toggleMuteBuzzer(bool muteBuzzer) async {
     try {
       final response = await http.put(
         Uri.parse('$baseUrl/calibration/mute-buzzer'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({"deviceId": deviceId}),
+        body: jsonEncode({
+          "deviceId": deviceId,
+          "muteBuzzer": muteBuzzer,
+        }),
       );
       return response.statusCode == 200;
     } catch (e) {

@@ -11,13 +11,17 @@ class CalibrationProvider extends ChangeNotifier {
   bool _isLoading = false;
   bool get isLoading => _isLoading;
 
-  Future<void> fetchCalibrationData() async {
-    _isLoading = true;
-    notifyListeners();
+  Future<void> fetchCalibrationData({bool showLoading = true}) async {
+    if (showLoading) {
+      _isLoading = true;
+      notifyListeners();
+    }
     
     _calibrationData = await _apiService.getCalibrationData();
     
-    _isLoading = false;
+    if (showLoading) {
+      _isLoading = false;
+    }
     notifyListeners();
   }
 
@@ -34,18 +38,28 @@ class CalibrationProvider extends ChangeNotifier {
     return success;
   }
 
-  Future<bool> toggleLiveMode() async {
-    final success = await _apiService.toggleLiveMode();
+  Future<bool> toggleLiveMode(bool newVal) async {
+    _isLoading = true;
+    notifyListeners();
+    final success = await _apiService.toggleLiveMode(newVal);
     if (success) {
       await fetchCalibrationData();
+    } else {
+      _isLoading = false;
+      notifyListeners();
     }
     return success;
   }
 
-  Future<bool> toggleMuteBuzzer() async {
-    final success = await _apiService.toggleMuteBuzzer();
+  Future<bool> toggleMuteBuzzer(bool newVal) async {
+    _isLoading = true;
+    notifyListeners();
+    final success = await _apiService.toggleMuteBuzzer(newVal);
     if (success) {
       await fetchCalibrationData();
+    } else {
+      _isLoading = false;
+      notifyListeners();
     }
     return success;
   }
