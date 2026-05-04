@@ -86,6 +86,7 @@ class FuzzyController extends ChangeNotifier {
   bool phWarningSent = false;
   bool tdsWarningSent = false;
   bool suhuWarningSent = false;
+  bool sensorFailSent = false;
   bool ekstremSent = false;
 
   // OUTPUT FUZZY
@@ -171,16 +172,16 @@ class FuzzyController extends ChangeNotifier {
       airKritisSent = false;
     }
 
-    if ((ph < 5.8 || ph > 7.2) && !phWarningSent) {
+    if ((ph < 5.5 || ph > 6.5) && !phWarningSent) {
       notificationController.addNotification(
         "pH Tidak Normal",
-        "Nilai pH di luar batas ideal",
+        "Nilai pH di luar batas aman (5.5 - 6.5)",
         NotificationType.warning,
       );
       phWarningSent = true;
     }
 
-    if (ph >= 5.8 && ph <= 7.2) {
+    if (ph >= 5.5 && ph <= 6.5) {
       phWarningSent = false;
     }
 
@@ -209,6 +210,21 @@ class FuzzyController extends ChangeNotifier {
     if (suhu <= 30) {
       suhuWarningSent = false;
     }
+
+    // --- SENSOR FAILURES ---
+    final sData = sensorProvider.latestData!;
+    bool isSensorFail = sData.airTemp == -1 || sData.waterTemp == -1 || (sData.tdsPPM == 0 && sData.waterTemp > 0);
+    if (isSensorFail && !sensorFailSent) {
+      notificationController.addNotification(
+        "Sensor Terputus!",
+        "Ditemukan kegagalan pada hardware sensor. Silakan cek kabel alat.",
+        NotificationType.warning,
+      );
+      sensorFailSent = true;
+    }
+    if (!isSensorFail) {
+      sensorFailSent = false;
+    }
   }
 
   void evaluateFuzzy() {
@@ -221,26 +237,28 @@ class FuzzyController extends ChangeNotifier {
     // pH Rendah
     if (ph <= 5.5) {
       muPhRendah = 1;
-    } else if (ph > 5.5 && ph < 6.5) {
-      muPhRendah = (6.5 - ph) / 1;
+    } else if (ph > 5.5 && ph < 5.8) {
+      muPhRendah = (5.8 - ph) / 0.3;
     } else {
       muPhRendah = 0;
     }
 
     // pH Normal
-    if (ph >= 6 && ph <= 7) {
-      muPhNormal = (ph - 6) / 1;
-    } else if (ph > 7 && ph <= 8) {
-      muPhNormal = (8 - ph) / 1;
+    if (ph >= 5.8 && ph <= 6.2) {
+      muPhNormal = 1;
+    } else if (ph > 5.5 && ph < 5.8) {
+      muPhNormal = (ph - 5.5) / 0.3;
+    } else if (ph > 6.2 && ph < 6.5) {
+      muPhNormal = (6.5 - ph) / 0.3;
     } else {
       muPhNormal = 0;
     }
 
     // pH Tinggi
-    if (ph >= 7.5 && ph <= 8.5) {
-      muPhTinggi = (ph - 7.5) / 1;
-    } else if (ph > 8.5) {
+    if (ph >= 6.5) {
       muPhTinggi = 1;
+    } else if (ph > 6.2 && ph < 6.5) {
+      muPhTinggi = (ph - 6.2) / 0.3;
     } else {
       muPhTinggi = 0;
     }

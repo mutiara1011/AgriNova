@@ -10,6 +10,8 @@ import 'package:agrinova/providers/sensor_provider.dart';
 import 'package:agrinova/providers/calibration_provider.dart';
 import 'package:agrinova/models/sensor_data.dart';
 import 'package:agrinova/providers/plant_provider.dart';
+import 'package:agrinova/notification/notification_controller.dart';
+import 'package:agrinova/notification/notification_model.dart';
 
 class DashboardPage extends StatefulWidget {
   final Function(int) onTabChange;
@@ -26,6 +28,7 @@ class _DashboardPageState extends State<DashboardPage> {
   int currentIndex = 0;
   final int chartsLength = 7; // 6 + ketinggian air = 7
   bool _isErrorDismissed = false;
+  static bool _hasShownSystemAlert = false;
 
   @override
   void initState() {
@@ -77,37 +80,100 @@ class _DashboardPageState extends State<DashboardPage> {
       appBar: _appBar(),
       body: Consumer<SensorProvider>(
         builder: (context, sensor, child) {
-          if (sensor.latestData == null && sensor.historyData.isEmpty) {
-            return const Center(child: CircularProgressIndicator(color: Color(0xff03AF55)));
+          final hasNoData = sensor.latestData == null && sensor.historyData.isEmpty;
+
+          // 🔥 SYSTEM ALERT POP-UP (Triggered once if errors exist)
+          if (!_hasShownSystemAlert && sensor.latestData != null) {
+            final errors = _getErrorMessages(sensor.latestData);
+            if (errors.isNotEmpty) {
+              _hasShownSystemAlert = true;
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                _showSystemErrorDialog(context, errors);
+              });
+            }
           }
 
           return RefreshIndicator(
             onRefresh: _onRefresh,
             color: const Color(0xff03AF55),
-            child: SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: EdgeInsets.fromLTRB(16, MediaQuery.of(context).padding.top + 70, 16, 100),
-              child: Column(
-                children: [
-                      _errorAlertBanner(context, sensor.latestData),
-                      _plantStatusOverview(context, sensor.latestData),
-                      const SizedBox(height: 24),
-                      _sectionTitle("Monitoring Real-time"),
-                      const SizedBox(height: 8),
-                      _sensorGrid(context, sensor.latestData),
-                      const SizedBox(height: 24),
-                      _sectionTitle("Analisis Tren"),
-                      const SizedBox(height: 8),
-                      _chartSlider(context, sensor),
-                      const SizedBox(height: 24),
-                      _fuzzyStatusCard(context),
-                      const SizedBox(height: 12),
-                      _lastUpdatedText(context, sensor),
-                    ],
-                  ),
-                ),
-              );
+            child: hasNoData && sensor.isLoading
+                ? const Center(child: CircularProgressIndicator(color: Color(0xff03AF55)))
+                : hasNoData
+                    ? _emptyStateView(context)
+                    : SingleChildScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: EdgeInsets.fromLTRB(16, MediaQuery.of(context).padding.top + 70, 16, 100),
+                        child: Column(
+                          children: [
+                            _plantStatusOverview(context, sensor.latestData),
+                            const SizedBox(height: 24),
+                            _sectionTitle("Monitoring Real-time"),
+                            const SizedBox(height: 8),
+                            _sensorGrid(context, sensor.latestData),
+                            const SizedBox(height: 24),
+                            _sectionTitle("Analisis Tren"),
+                            const SizedBox(height: 8),
+                            _chartSlider(context, sensor),
+                            const SizedBox(height: 24),
+                            _fuzzyStatusCard(context),
+                            const SizedBox(height: 12),
+                            _lastUpdatedText(context, sensor),
+                          ],
+                        ),
+                      ),
+          );
         },
+      ),
+    );
+  }
+
+  Widget _emptyStateView(BuildContext context) {
+    return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      child: Container(
+        height: MediaQuery.of(context).size.height - 100,
+        alignment: Alignment.center,
+        padding: const EdgeInsets.symmetric(horizontal: 40),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: const Color(0xff03AF55).withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.cloud_off_rounded, size: 64, color: Color(0xff03AF55)),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              "Gagal Memuat Data",
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              "Pastikan perangkat Anda terhubung ke internet dan alat AgriNova sedang aktif.",
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 14, color: Colors.grey, fontWeight: FontWeight.w500),
+            ),
+            const SizedBox(height: 32),
+            SizedBox(
+              width: 160,
+              child: ElevatedButton.icon(
+                onPressed: _onRefresh,
+                icon: const Icon(Icons.refresh_rounded, size: 20),
+                label: const Text("COBA LAGI", style: TextStyle(fontWeight: FontWeight.w900)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xff03AF55),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  elevation: 0,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -165,133 +231,187 @@ class _DashboardPageState extends State<DashboardPage> {
     return msgs;
   }
 
-  Widget _errorAlertBanner(BuildContext context, SensorData? data) {
-    if (_isErrorDismissed) return const SizedBox();
-    final errors = _getErrorMessages(data);
-    if (errors.isEmpty) return const SizedBox();
-
-    final calibration = context.watch<CalibrationProvider>();
+  void _showSystemErrorDialog(BuildContext context, List<String> errors) {
+    final calibration = context.read<CalibrationProvider>();
     final isMuted = calibration.calibrationData?.muteBuzzer ?? false;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: const Color(0xffFEF2F2),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: const Color(0xffFCA5A5), width: 1.5),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: const Color(0xffEF4444).withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Container(
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xff1A1D23) : Colors.white,
+            borderRadius: BorderRadius.circular(32),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.2),
+                blurRadius: 30,
+                offset: const Offset(0, 15),
+              )
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Header with Gradient
+              Container(
+                height: 140,
+                width: double.infinity,
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xffFF5F6D), Color(0xffFFC371)],
                   ),
-                  child: const Icon(Icons.warning_amber_rounded, color: Color(0xffEF4444), size: 20),
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
                 ),
-                const SizedBox(width: 10),
-                const Expanded(
-                  child: Text(
-                    "Peringatan Sistem!",
-                    style: TextStyle(color: Color(0xffDC2626), fontWeight: FontWeight.w900, fontSize: 15),
-                  ),
-                ),
-                IconButton(
-                  onPressed: () {
-                    setState(() {
-                      _isErrorDismissed = true;
-                    });
-                  },
-                  icon: const Icon(Icons.close, color: Color(0xffDC2626), size: 20),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            ...errors.map((msg) => Padding(
-              padding: const EdgeInsets.only(bottom: 4, left: 4),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text("• ", style: TextStyle(color: Color(0xffDC2626), fontWeight: FontWeight.bold)),
-                  Expanded(child: Text(msg, style: const TextStyle(color: Color(0xff991B1B), fontSize: 13, fontWeight: FontWeight.w600))),
-                ],
-              ),
-            )),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () async {
-                      await calibration.toggleMuteBuzzer(!isMuted);
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 10),
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    // Subtle background pattern
+                    Positioned(
+                      right: -20, top: -20,
+                      child: Icon(Icons.warning_amber_rounded, size: 150, color: Colors.white.withValues(alpha: 0.1)),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: isMuted ? Colors.grey.shade200 : const Color(0xffEF4444),
-                        borderRadius: BorderRadius.circular(12),
+                        color: Colors.white.withValues(alpha: 0.2),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 2),
                       ),
-                      alignment: Alignment.center,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            isMuted ? Icons.volume_off : Icons.volume_up,
-                            size: 16,
-                            color: isMuted ? Colors.grey.shade600 : Colors.white,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            isMuted ? "Buzzer Dimatikan" : "Matikan Buzzer",
-                            style: TextStyle(
-                              color: isMuted ? Colors.grey.shade600 : Colors.white,
-                              fontWeight: FontWeight.w800,
-                              fontSize: 13,
+                      child: const Icon(Icons.priority_high_rounded, size: 40, color: Colors.white),
+                    ),
+                  ],
+                ),
+              ),
+              
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
+                child: Column(
+                  children: [
+                    Text(
+                      "Peringatan Sistem!",
+                      style: TextStyle(
+                        fontSize: 22, 
+                        fontWeight: FontWeight.w900, 
+                        color: isDark ? Colors.white : const Color(0xff1F2937),
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      "Ditemukan beberapa anomali pada alat AgriNova Anda:",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 14, 
+                        color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Error List in Stylized Cards
+              Flexible(
+                child: Container(
+                  constraints: const BoxConstraints(maxHeight: 200),
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    child: Column(
+                      children: errors.map((msg) => Container(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xffEF4444).withValues(alpha: 0.05),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: const Color(0xffEF4444).withValues(alpha: 0.1)),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Icon(Icons.error_outline_rounded, size: 16, color: Color(0xffEF4444)),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                msg, 
+                                style: const TextStyle(
+                                  fontSize: 13, 
+                                  fontWeight: FontWeight.w600, 
+                                  color: Color(0xffB91C1C),
+                                  height: 1.3,
+                                ),
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
+                          ],
+                        ),
+                      )).toList(),
                     ),
                   ),
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        _isErrorDismissed = true;
-                      });
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xffFCA5A5)),
-                      ),
-                      alignment: Alignment.center,
-                      child: const Text(
-                        "Tutup",
-                        style: TextStyle(
-                          color: Color(0xffDC2626),
-                          fontWeight: FontWeight.w800,
-                          fontSize: 13,
+              ),
+
+              // Action Buttons
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  children: [
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          await calibration.toggleMuteBuzzer(!isMuted);
+                          if (context.mounted) Navigator.pop(context);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: isMuted ? Colors.grey.shade200 : const Color(0xff1F2937),
+                          foregroundColor: isMuted ? Colors.grey.shade700 : Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          elevation: 0,
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(isMuted ? Icons.volume_up : Icons.volume_off, size: 20),
+                            const SizedBox(width: 10),
+                            Text(
+                              isMuted ? "AKTIFKAN BUZZER" : "MATIKAN BUZZER", 
+                              style: const TextStyle(fontWeight: FontWeight.w900, letterSpacing: 0.5),
+                            ),
+                          ],
                         ),
                       ),
                     ),
-                  ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        ),
+                        child: Text(
+                          "SAYA MENGERTI", 
+                          style: TextStyle(
+                            color: Colors.grey.shade500, 
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 1,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
       ),
     );

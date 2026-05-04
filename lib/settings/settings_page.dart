@@ -16,11 +16,9 @@ class SettingsPage extends StatefulWidget {
   @override
   State<SettingsPage> createState() => _SettingsPageState();
 }
-
 class _SettingsPageState extends State<SettingsPage> {
   bool notifikasi = true;
   bool modeGelap = false;
-  int intervalFuzzy = 5;
   DateTime startDate = DateTime.now().subtract(const Duration(days: 13));
   int get hst => DateTime.now().difference(startDate).inDays + 1;
 
@@ -49,7 +47,6 @@ class _SettingsPageState extends State<SettingsPage> {
       fuzzy.startTimer();
 
       setState(() {
-        intervalFuzzy = interval;
         notifikasi = notif;
       });
     });
@@ -203,28 +200,18 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
           const SizedBox(height: 16),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            width: double.infinity,
             decoration: BoxDecoration(color: Colors.grey.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(16)),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<int>(
-                value: intervalFuzzy,
-                isExpanded: true,
-                items: const [
-                  DropdownMenuItem(value: 1, child: Text('Update setiap 1 Detik', style: TextStyle(fontWeight: FontWeight.bold))),
-                  DropdownMenuItem(value: 5, child: Text('Update setiap 5 Detik', style: TextStyle(fontWeight: FontWeight.bold))),
-                  DropdownMenuItem(value: 10, child: Text('Update setiap 10 Detik', style: TextStyle(fontWeight: FontWeight.bold))),
-                ],
-                onChanged: (v) async {
-                  if (v != null) {
-                    setState(() => intervalFuzzy = v);
-                    final fuzzy = context.read<FuzzyController>();
-                    fuzzy.interval = v;
-                    fuzzy.startTimer();
-                    await SettingsHelper.saveInterval(v);
-                  }
-                },
-              ),
+            child: const Text(
+              'Update Otomatis setiap 10 Menit',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
             ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            "*Interval ini dioptimalkan untuk menjaga akurasi data dan efisiensi baterai.",
+            style: TextStyle(fontSize: 11, color: Colors.grey, fontStyle: FontStyle.italic),
           ),
         ],
       ),
@@ -239,7 +226,7 @@ class _SettingsPageState extends State<SettingsPage> {
         children: [
           _listItem('Ambang pH Minimum', '5.5 pH', Icons.arrow_downward_rounded),
           const Divider(indent: 50, endIndent: 20),
-          _listItem('Ambang pH Maksimum', '7.5 pH', Icons.arrow_upward_rounded),
+          _listItem('Ambang pH Maksimum', '6.5 pH', Icons.arrow_upward_rounded),
           const Divider(indent: 50, endIndent: 20),
           _listItem('Batas Aman TDS', '1200 PPM', Icons.security_rounded),
         ],

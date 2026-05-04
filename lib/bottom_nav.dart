@@ -4,6 +4,7 @@ import 'control_page.dart';
 import 'fuzzy/fuzzy_page.dart';
 import 'settings/settings_page.dart';
 import 'notification/notification_controller.dart';
+import 'notification/notification_model.dart';
 import 'notification/notification_service.dart';
 import 'package:provider/provider.dart';
 
@@ -16,36 +17,31 @@ class BottomNav extends StatefulWidget {
 
 class _BottomNavState extends State<BottomNav> {
   int index = 0;
-  int lastNotifCount = 0;
+  List<Widget>? _pages;
 
   @override
-  Widget build(BuildContext context) {
-    final pages = [
+  void initState() {
+    super.initState();
+    _pages = [
       DashboardPage(onTabChange: (i) => setState(() => index = i)),
       const ControlPage(),
       const FuzzyPage(),
       const SettingsPage(),
     ];
+  }
 
+
+  @override
+  Widget build(BuildContext context) {
     final notifController = context.watch<NotificationController>();
-
-    if (notifController.notifications.length != lastNotifCount) {
-      lastNotifCount = notifController.notifications.length;
-
-      final latest = notifController.notifications.first;
-
-      // 🔥 CEK SETTING
-      if (notifController.isEnabled) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          showGlobalNotification(context, latest);
-        });
-      }
-    }
 
     return Scaffold(
       extendBody: true,
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: pages[index],
+      body: IndexedStack(
+        index: index,
+        children: _pages!,
+      ),
       bottomNavigationBar: Container(
         margin: const EdgeInsets.fromLTRB(24, 0, 24, 24),
         height: 70,

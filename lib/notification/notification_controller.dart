@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'notification_model.dart';
@@ -7,6 +8,9 @@ class NotificationController extends ChangeNotifier {
   List<AppNotification> _notifications = [];
   bool isEnabled = true;
   static const String _notifKey = 'app_notifications';
+  
+  final _newNotificationStream = StreamController<AppNotification>.broadcast();
+  Stream<AppNotification> get newNotificationStream => _newNotificationStream.stream;
 
   NotificationController() {
     _loadNotifications();
@@ -42,6 +46,9 @@ class NotificationController extends ChangeNotifier {
 
     _notifications.insert(0, notif);
     
+    // Broadcast for pop-ups
+    _newNotificationStream.add(notif);
+    
     // Keep max 50 notifications
     if (_notifications.length > 50) {
       _notifications = _notifications.sublist(0, 50);
@@ -51,11 +58,23 @@ class NotificationController extends ChangeNotifier {
     notifyListeners();
   }
 
+  void markAsShown(AppNotification notif) {
+    notif.isShown = true;
+    _saveNotifications();
+    notifyListeners();
+  }
+
   void clearNotifications() async {
     _notifications.clear();
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_notifKey);
     notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _newNotificationStream.close();
+    super.dispose();
   }
 }
 

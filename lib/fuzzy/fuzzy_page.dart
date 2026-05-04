@@ -14,10 +14,14 @@ class FuzzyPage extends StatefulWidget {
 
 class _FuzzyPageState extends State<FuzzyPage> {
   Future<void> _onRefresh() async {
-    final sensor = context.read<SensorProvider>();
-    await sensor.fetchLatestData();
-    if (mounted) {
-      context.read<FuzzyController>().updateFromSensor();
+    try {
+      final sensor = context.read<SensorProvider>();
+      await sensor.fetchLatestData();
+      if (mounted) {
+        context.read<FuzzyController>().updateFromSensor();
+      }
+    } catch (e) {
+      debugPrint("Error onRefresh FuzzyPage: $e");
     }
   }
 

@@ -14,10 +14,13 @@ class ApiService {
       var url = '$baseUrl/sensors/latest?deviceId=$deviceId';
       if (t != null) url += '&t=$t';
       
-      final response = await http.get(Uri.parse(url));
+      final response = await http
+          .get(Uri.parse(url))
+          .timeout(const Duration(seconds: 10));
+      
       if (response.statusCode == 200) {
         final json = jsonDecode(response.body);
-        return SensorData.fromJson(json['data'] ?? json); // Support wrapper or direct
+        return SensorData.fromJson(json['data'] ?? json);
       }
     } catch (e) {
       print('Error getLatestSensorData: $e');
@@ -27,7 +30,9 @@ class ApiService {
 
   Future<List<SensorData>> getSensorHistory({int page = 1, int limit = 20}) async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/sensors/history?deviceId=$deviceId&page=$page&limit=$limit'));
+      final response = await http
+          .get(Uri.parse('$baseUrl/sensors/history?deviceId=$deviceId&page=$page&limit=$limit'))
+          .timeout(const Duration(seconds: 10));
       if (response.statusCode == 200) {
         final json = jsonDecode(response.body);
         final data = json['data'] ?? {};
@@ -45,7 +50,9 @@ class ApiService {
       var url = '$baseUrl/sensors/analysis?deviceId=$deviceId&timeRange=$timeRange';
       if (endDate != null) url += '&endDate=$endDate';
       
-      final response = await http.get(Uri.parse(url));
+      final response = await http
+          .get(Uri.parse(url))
+          .timeout(const Duration(seconds: 10));
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       }
@@ -59,7 +66,9 @@ class ApiService {
 
   Future<CalibrationData?> getCalibrationData() async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/calibration?deviceId=$deviceId'));
+      final response = await http
+          .get(Uri.parse('$baseUrl/calibration?deviceId=$deviceId'))
+          .timeout(const Duration(seconds: 10));
       if (response.statusCode == 200) {
         final json = jsonDecode(response.body);
         return CalibrationData.fromJson(json['data'] ?? json);
@@ -82,7 +91,7 @@ class ApiService {
           "tdsManual": tdsManual,
           "tdsSensor": tdsSensor,
         }),
-      );
+      ).timeout(const Duration(seconds: 10));
       return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {
       print('Error updateCalibration: $e');
@@ -99,7 +108,7 @@ class ApiService {
           "deviceId": deviceId,
           "liveModeActive": liveModeActive,
         }),
-      );
+      ).timeout(const Duration(seconds: 10));
       return response.statusCode == 200;
     } catch (e) {
       print('Error toggleLiveMode: $e');
@@ -116,7 +125,7 @@ class ApiService {
           "deviceId": deviceId,
           "muteBuzzer": muteBuzzer,
         }),
-      );
+      ).timeout(const Duration(seconds: 10));
       return response.statusCode == 200;
     } catch (e) {
       print('Error toggleMuteBuzzer: $e');
@@ -128,7 +137,7 @@ class ApiService {
     try {
       final response = await http.delete(
         Uri.parse('$baseUrl/calibration/tds-points?deviceId=$deviceId'), // Also passing deviceId just in case
-      );
+      ).timeout(const Duration(seconds: 10));
       return response.statusCode == 200;
     } catch (e) {
       print('Error resetTdsPoints: $e');

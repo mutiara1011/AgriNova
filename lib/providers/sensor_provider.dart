@@ -67,30 +67,45 @@ class SensorProvider extends ChangeNotifier {
   }
 
   Future<void> fetchLatestData() async {
-    // Add timestamp to bypass HTTP cache
-    final timestamp = DateTime.now().millisecondsSinceEpoch;
-    final newData = await _apiService.getLatestSensorData(t: timestamp);
-    
-    if (newData != null) {
-      _latestData = newData;
-      _lastFetchedAt = DateTime.now();
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      // Add timestamp to bypass HTTP cache
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final newData = await _apiService.getLatestSensorData(t: timestamp);
       
-      // Add to history only if truly new (different timestamp)
-      bool alreadyExists = _historyData.any(
-        (element) => element.createdAt != null && 
-                     newData.createdAt != null && 
-                     element.createdAt == newData.createdAt
-      );
-      if (!alreadyExists) {
-        _historyData.add(newData);
-        if (_historyData.length > 30) {
-          _historyData.removeAt(0);
+      if (newData != null) {
+        _latestData = newData;
+        _lastFetchedAt = DateTime.now();
+        
+        // Simpan ke history hanya jika selisih waktu >= 10 menit dari data terakhir
+        bool shouldStore = false;
+        if (_historyData.isEmpty) {
+          shouldStore = true;
+        } else {
+          final lastTime = _historyData.last.createdAt;
+          final newTime = newData.createdAt;
+          if (lastTime != null && newTime != null) {
+            // Jika selisih waktu sudah mencapai 10 menit atau lebih
+            if (newTime.difference(lastTime).inMinutes >= 10) {
+              shouldStore = true;
+            }
+          }
+        }
+
+        if (shouldStore) {
+          _historyData.add(newData);
+          if (_historyData.length > 50) {
+            _historyData.removeAt(0); // Simpan 50 data point (~8 jam data)
+          }
         }
       }
+    } finally {
+      _isLoading = false;
+      // Always notify so UI rebuilds (even if data unchanged, lastFetchedAt changed)
+      notifyListeners();
     }
-    
-    // Always notify so UI rebuilds (even if data unchanged, lastFetchedAt changed)
-    notifyListeners();
   }
 
   Future<void> fetchHistoryData({int page = 1, int limit = 50, DateTime? startDate}) async {
@@ -122,16 +137,18 @@ class SensorProvider extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     
-    final res = await _apiService.getSensorAnalysis(timeRange: timeRange, endDate: endDate);
-    if (res['success'] == true) {
-      final data = res['data'] ?? {};
-      final chartList = (data['chartData'] ?? []) as List;
-      _analysisData = chartList.map((i) => SensorData.fromJson(i)).toList();
-      _analysisStats = data['stats'] ?? {};
+    try {
+      final res = await _apiService.getSensorAnalysis(timeRange: timeRange, endDate: endDate);
+      if (res['success'] == true) {
+        final data = res['data'] ?? {};
+        final chartList = (data['chartData'] ?? []) as List;
+        _analysisData = chartList.map((i) => SensorData.fromJson(i)).toList();
+        _analysisStats = data['stats'] ?? {};
+      }
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
-    
-    _isLoading = false;
-    notifyListeners();
   }
 
   @override

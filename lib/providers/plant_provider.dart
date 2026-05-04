@@ -36,21 +36,22 @@ class PlantProvider extends ChangeNotifier {
 
   Future<void> startNewCycle({required String name, required DateTime startDate}) async {
     double minPh = 5.5, maxPh = 6.5, minTds = 500, maxTds = 1000;
+    double idealPhMin = 5.8, idealPhMax = 6.2;
     
     if (name.toLowerCase().contains("kangkung")) {
-      minPh = 5.5; maxPh = 6.5; minTds = 1000; maxTds = 1400;
+      minTds = 1000; maxTds = 1400;
     } else if (name.toLowerCase().contains("pakcoy")) {
-      minPh = 6.0; maxPh = 7.0; minTds = 1050; maxTds = 1400;
+      minTds = 1050; maxTds = 1400;
     } else if (name.toLowerCase().contains("selada")) {
-      minPh = 5.5; maxPh = 6.5; minTds = 560; maxTds = 840;
+      minTds = 560; maxTds = 840;
     }
 
     final newCycle = PlantCycle(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       name: name,
       startDate: startDate,
-      targetPhMin: minPh,
-      targetPhMax: maxPh,
+      targetPhMin: idealPhMin,
+      targetPhMax: idealPhMax,
       targetTdsMin: minTds,
       targetTdsMax: maxTds,
     );
