@@ -79,7 +79,7 @@ class SensorProvider extends ChangeNotifier {
         _latestData = newData;
         _lastFetchedAt = DateTime.now();
         
-        // Simpan ke history hanya jika selisih waktu >= 10 menit dari data terakhir
+        // Simpan ke history agar grafik terupdate
         bool shouldStore = false;
         if (_historyData.isEmpty) {
           shouldStore = true;
@@ -87,19 +87,28 @@ class SensorProvider extends ChangeNotifier {
           final lastTime = _historyData.last.createdAt;
           final newTime = newData.createdAt;
           if (lastTime != null && newTime != null) {
-            // Jika selisih waktu sudah mencapai 10 menit atau lebih
-            if (newTime.difference(lastTime).inMinutes >= 10) {
-              shouldStore = true;
+            // Jika Live Mode: simpan setiap data baru (5 detik)
+            // Jika Normal: simpan setiap 10 menit
+            if (_isLiveMode) {
+              if (newTime.isAfter(lastTime)) {
+                shouldStore = true;
+              }
+            } else {
+              if (newTime.difference(lastTime).inMinutes >= 10) {
+                shouldStore = true;
+              }
             }
           }
         }
 
         if (shouldStore) {
           _historyData.add(newData);
-          if (_historyData.length > 50) {
-            _historyData.removeAt(0); // Simpan 50 data point (~8 jam data)
+          // Simpan maksimal 100 data point agar grafik tetap lancar
+          if (_historyData.length > 100) {
+            _historyData.removeAt(0);
           }
         }
+
       }
     } finally {
       _isLoading = false;
@@ -108,9 +117,10 @@ class SensorProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> fetchHistoryData({int page = 1, int limit = 50, DateTime? startDate}) async {
+  Future<void> fetchHistoryData({int page = 1, int limit = 50, DateTime? startDate, DateTime? endDate}) async {
     _isLoading = true;
     notifyListeners();
+
     
     final fetched = await _apiService.getSensorHistory(page: page, limit: limit);
     var list = fetched.reversed.toList();
@@ -119,6 +129,10 @@ class SensorProvider extends ChangeNotifier {
     if (startDate != null) {
       list = list.where((data) => data.createdAt != null && !data.createdAt!.isBefore(startDate)).toList();
     }
+    if (endDate != null) {
+      list = list.where((data) => data.createdAt != null && !data.createdAt!.isAfter(endDate)).toList();
+    }
+
     
     _historyData = list;
     
@@ -133,7 +147,7 @@ class SensorProvider extends ChangeNotifier {
   Map<String, dynamic> _analysisStats = {};
   Map<String, dynamic> get analysisStats => _analysisStats;
 
-  Future<void> fetchAnalysisData({String timeRange = '1d', String? endDate}) async {
+  Future<void> fetchAnalysisData({String timeRange = '1d', String? endDate, DateTime? startDate}) async {
     _isLoading = true;
     notifyListeners();
     
@@ -142,10 +156,18 @@ class SensorProvider extends ChangeNotifier {
       if (res['success'] == true) {
         final data = res['data'] ?? {};
         final chartList = (data['chartData'] ?? []) as List;
-        _analysisData = chartList.map((i) => SensorData.fromJson(i)).toList();
+        var list = chartList.map((i) => SensorData.fromJson(i)).toList();
+        
+        // Filter based on active plant start date
+        if (startDate != null) {
+          list = list.where((d) => d.createdAt != null && !d.createdAt!.isBefore(startDate)).toList();
+        }
+        
+        _analysisData = list;
         _analysisStats = data['stats'] ?? {};
       }
     } finally {
+
       _isLoading = false;
       notifyListeners();
     }

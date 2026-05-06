@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import '../providers/plant_provider.dart';
 import '../models/plant_cycle.dart';
 import 'package:intl/intl.dart';
+import 'history_detail_page.dart';
+
 
 class CycleHistoryPage extends StatelessWidget {
   const CycleHistoryPage({super.key});
@@ -67,24 +69,31 @@ class _CycleCard extends StatelessWidget {
     final endFormat = cycle.endDate != null ? DateFormat('dd MMM yyyy').format(cycle.endDate!) : 'N/A';
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
-          ),
-        ],
-        border: Border.all(
-          color: Colors.white.withValues(alpha: isDark ? 0.05 : 0.5),
-          width: 1.5,
-        ),
+    return InkWell(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => HistoryDetailPage(cycle: cycle)),
       ),
-      child: Column(
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardColor,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 5),
+            ),
+          ],
+          border: Border.all(
+            color: Colors.white.withValues(alpha: isDark ? 0.05 : 0.5),
+            width: 1.5,
+          ),
+        ),
+        child: Column(
+
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
@@ -127,13 +136,23 @@ class _CycleCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text("Data Tersimpan", style: TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.w800)),
-                  Text("${cycle.historyData.length} Data Sensor", style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
+                  Text(
+                    cycle.historyData.isEmpty ? "Klik untuk Detail" : "${cycle.historyData.length} Data Sensor",
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700, 
+                      fontSize: 12,
+                      color: cycle.historyData.isEmpty ? const Color(0xff03AF55) : null,
+                    ),
+                  ),
+
                 ],
               ),
             ],
           ),
         ],
       ),
+      ),
     );
   }
 }
+

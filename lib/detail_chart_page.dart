@@ -3,7 +3,9 @@ import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:agrinova/providers/sensor_provider.dart';
 import 'package:agrinova/models/sensor_data.dart';
+import 'package:agrinova/providers/plant_provider.dart';
 import 'package:intl/intl.dart';
+
 
 class SensorType {
   final String id;
@@ -56,8 +58,14 @@ class _DetailChartPageState extends State<DetailChartPage> {
 
   void _refreshAnalysis() {
     final endDateStr = focusDate.toUtc().toIso8601String();
-    context.read<SensorProvider>().fetchAnalysisData(timeRange: activeRange, endDate: endDateStr);
+    final plant = context.read<PlantProvider>().activePlant;
+    context.read<SensorProvider>().fetchAnalysisData(
+      timeRange: activeRange, 
+      endDate: endDateStr,
+      startDate: plant?.startDate,
+    );
   }
+
 
   void _changePeriod(int direction) {
     setState(() {
@@ -267,43 +275,9 @@ class _DetailChartPageState extends State<DetailChartPage> {
     );
   }
 
-  bool get _isDemoMode => activeSensor.id == "waterLevel";
-
-  List<SensorData> _getDisplayHistory(List<SensorData> realHistory) {
-    if (!_isDemoMode) return realHistory;
-    
-    return List.generate(15, (i) {
-      final time = focusDate.subtract(Duration(hours: 14 - i));
-      double baseVal = 25.0;
-      double variance = 2.0;
-      
-      if (activeSensor.id == "waterLevel") { baseVal = 12.0; variance = 0.5; }
-      else if (activeSensor.id == "airTemp") { baseVal = 28.0; variance = 3.0; }
-      else if (activeSensor.id == "phValue") { baseVal = 6.5; variance = 0.3; }
-      else if (activeSensor.id == "tdsPPM") { baseVal = 700; variance = 50; }
-      
-      final val = baseVal + (variance * (i % 3 == 0 ? 0.5 : -0.2)) + (i * 0.02);
-      
-      return SensorData(
-        deviceId: "DEMO",
-        airTemp: activeSensor.id == "airTemp" ? val : 0,
-        airHumidity: activeSensor.id == "airHumidity" ? val : 0,
-        waterTemp: activeSensor.id == "waterTemp" ? val : 0,
-        lightLux: activeSensor.id == "lightLux" ? val : 0,
-        tdsPPM: activeSensor.id == "tdsPPM" ? val : 0,
-        phValue: (activeSensor.id == "phValue" || activeSensor.id == "waterLevel") ? val : 0,
-        isRealtime: false,
-        systemState: 0,
-        createdAt: time,
-      );
-    });
-  }
-
   Widget _buildAnalyticsCard(SensorProvider provider, List<SensorData> history, Map<String, dynamic> trend) {
-    final displayHistory = _getDisplayHistory(history);
-    final trendData = _isDemoMode ? {"value": 2.4, "isUp": true} : trend;
-    final trendVal = trendData['value'] as double;
-    final isUp = trendData['isUp'] as bool;
+    final trendVal = trend['value'] as double;
+    final isUp = trend['isUp'] as bool;
     
     return _PremiumCard(
       padding: const EdgeInsets.all(24),
@@ -321,15 +295,9 @@ class _DetailChartPageState extends State<DetailChartPage> {
                     Row(
                       children: [
                         const Text("Tren Historis", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
-                        if (_isDemoMode) 
-                          Container(
-                            margin: const EdgeInsets.only(left: 8),
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(color: Colors.amber.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4)),
-                            child: const Text("DEMO", style: TextStyle(color: Colors.amber, fontSize: 8, fontWeight: FontWeight.w900)),
-                          ),
                       ],
                     ),
+
                     const SizedBox(height: 4),
                     Text(_getDateLabel(), style: TextStyle(fontSize: 12, color: Colors.grey.shade500, fontWeight: FontWeight.w600)),
                   ],
@@ -345,8 +313,9 @@ class _DetailChartPageState extends State<DetailChartPage> {
             height: 250,
             child: provider.isLoading 
               ? const Center(child: CircularProgressIndicator()) 
-              : _buildModernChart(displayHistory),
+              : _buildModernChart(history),
           ),
+
           const SizedBox(height: 24),
           if (trendVal > 0) _buildTrendIndicator(trendVal, isUp),
         ],
@@ -482,15 +451,26 @@ class _DetailChartPageState extends State<DetailChartPage> {
           bottomTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
-              interval: xLabelInterval,
+              interval: 1, // Controlled by getTitlesWidget logic
               getTitlesWidget: (v, m) {
                 final idx = v.toInt();
                 if (idx < 0 || idx >= validHistory.length) return const SizedBox();
-                if (idx % xLabelInterval.toInt() != 0 && idx != validHistory.length - 1) return const SizedBox();
+                
+                // Show approx 5-6 labels
+                int interval = (validHistory.length / 5).ceil();
+                if (interval < 1) interval = 1;
+                
+                if (idx % interval != 0 && idx != validHistory.length - 1) return const SizedBox();
+
+                // Avoid showing the second to last label if it's too close to the last one
+                if (idx == validHistory.length - 1 - (interval / 2).floor() && idx != validHistory.length - 1) {
+                  return const SizedBox();
+                }
                 
                 final date = validHistory[idx].createdAt!;
-                return Padding(
-                  padding: const EdgeInsets.only(top: 10.0),
+                return SideTitleWidget(
+                  axisSide: m.axisSide,
+                  space: 8,
                   child: Text(
                     activeRange == "1d" ? DateFormat('HH:mm').format(date) : DateFormat('d MMM').format(date),
                     style: TextStyle(fontSize: 9, color: Colors.grey.shade500, fontWeight: FontWeight.bold),
@@ -499,6 +479,7 @@ class _DetailChartPageState extends State<DetailChartPage> {
               },
             ),
           ),
+
           rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
           topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
         ),
@@ -557,10 +538,8 @@ class _DetailChartPageState extends State<DetailChartPage> {
     Color insightColor = activeSensor.color;
     IconData insightIcon = Icons.auto_awesome;
 
-    if (_isDemoMode) {
-      insight = "Ketinggian air terjaga stabil di 12cm. Sistem akan otomatis mengisi jika di bawah 8cm.";
-      insightColor = Colors.green;
-    } else if (latestData != null) {
+    if (latestData != null) {
+
       final val = _getSelector(activeSensor.id)(latestData);
       switch (activeSensor.id) {
         case "phValue":
@@ -634,13 +613,10 @@ class _DetailChartPageState extends State<DetailChartPage> {
 
     double min, max, avg;
 
-    if (_isDemoMode) {
-      min = 11.8; max = 12.4; avg = 12.1;
-    } else {
-      min = (stats['min$capitalizedId'] ?? 0.0).toDouble();
-      max = (stats['max$capitalizedId'] ?? 0.0).toDouble();
-      avg = (stats['avg$capitalizedId'] ?? 0.0).toDouble();
-    }
+    min = (stats['min$capitalizedId'] ?? 0.0).toDouble();
+    max = (stats['max$capitalizedId'] ?? 0.0).toDouble();
+    avg = (stats['avg$capitalizedId'] ?? 0.0).toDouble();
+
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

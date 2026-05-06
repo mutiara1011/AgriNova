@@ -119,7 +119,7 @@ class _DashboardPageState extends State<DashboardPage> {
                           _plantDetailsSection(context),
                         ],
                         const SizedBox(height: 24),
-                        _sectionTitle("Monitoring Real-time"),
+                        _sectionTitle("Monitoring Realtime"),
                         const SizedBox(height: 8),
                         _sensorGrid(context, sensor.latestData),
                         const SizedBox(height: 24),
@@ -664,10 +664,23 @@ class _DashboardPageState extends State<DashboardPage> {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(28),
           color: const Color(0xff03AF55).withValues(alpha: 0.1),
-          image: const DecorationImage(
-            image: AssetImage('assets/images/selada_romaine.jpg'),
+          image: DecorationImage(
+            image: AssetImage(
+              name.toLowerCase().contains("kangkung")
+                  ? 'assets/images/kangkung.png'
+                  : name.toLowerCase().contains("pakcoy")
+                      ? 'assets/images/pakcoy.png'
+                      : name.toLowerCase().contains("selada")
+                          ? 'assets/images/selada.png'
+                          : 'assets/images/selada_romaine.jpg',
+            ),
             fit: BoxFit.cover,
+            colorFilter: ColorFilter.mode(
+              Colors.black.withValues(alpha: 0.2),
+              BlendMode.darken,
+            ),
           ),
+
         ),
         child: Container(
           decoration: BoxDecoration(
@@ -1235,25 +1248,34 @@ class _DashboardPageState extends State<DashboardPage> {
                 bottomTitles: AxisTitles(
                   sideTitles: SideTitles(
                     showTitles: true,
-                    reservedSize: 22,
-                    interval: history.length > 10
-                        ? (history.length / 5).toDouble()
-                        : 1,
+                    reservedSize: 24,
+                    interval: 1, // Let getTitlesWidget decide based on value
                     getTitlesWidget: (value, meta) {
                       final idx = value.toInt();
-                      if (idx < 0 || idx >= history.length)
+                      // Only show labels for every ~20% of data to avoid crowding
+                      int interval = (history.length / 4).ceil();
+                      if (interval < 1) interval = 1;
+                      
+                      if (idx < 0 || idx >= history.length || idx % interval != 0) {
                         return const SizedBox();
+                      }
+
+                      // Avoid showing the very last label if it's too close to the end
+                      if (idx > history.length - (interval / 2) && idx != history.length - 1) {
+                         return const SizedBox();
+                      }
 
                       final time = history[idx].createdAt ?? DateTime.now();
-                      final timeStr = DateFormat('HH.mm').format(time);
+                      final timeStr = DateFormat('HH:mm').format(time);
 
-                      return Padding(
-                        padding: const EdgeInsets.only(top: 8),
+                      return SideTitleWidget(
+                        axisSide: meta.axisSide,
+                        space: 8,
                         child: Text(
                           timeStr,
                           style: TextStyle(
                             color: Colors.grey.shade400,
-                            fontSize: 8,
+                            fontSize: 9,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -1264,7 +1286,8 @@ class _DashboardPageState extends State<DashboardPage> {
               ),
               borderData: FlBorderData(show: false),
               minX: 0,
-              maxX: spots.length > 1 ? (spots.length - 0.9).toDouble() : 1,
+              maxX: history.length > 1 ? (history.length - 1).toDouble() : 1,
+
               lineBarsData: [
                 LineChartBarData(
                   spots: spots,

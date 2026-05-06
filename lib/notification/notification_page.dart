@@ -9,7 +9,7 @@ class NotificationPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final notif = context.watch<NotificationController>();
-    final list = notif.notifications.reversed.toList();
+    final list = notif.notifications.toList();
 
     return Scaffold(
       extendBodyBehindAppBar: true,

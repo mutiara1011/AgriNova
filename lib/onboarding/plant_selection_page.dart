@@ -191,22 +191,12 @@ class _PlantSelectionPageState extends State<PlantSelectionPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (commodity.imagePath.isNotEmpty)
-            ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-              child: commodity.imagePath.startsWith('http') || commodity.imagePath.startsWith('C:') || commodity.imagePath.contains('/')
-                  ? (commodity.imagePath.startsWith('http') 
-                      ? Image.network(commodity.imagePath, height: 180, width: double.infinity, fit: BoxFit.cover)
-                      : (commodity.imagePath.startsWith('assets/') 
-                          ? Image.asset(commodity.imagePath, height: 180, width: double.infinity, fit: BoxFit.cover)
-                          : Image.file(File(commodity.imagePath), height: 180, width: double.infinity, fit: BoxFit.cover)))
-                  : Container(
-                      height: 180,
-                      width: double.infinity,
-                      color: Colors.grey.shade200,
-                      child: const Icon(Icons.image, size: 50, color: Colors.grey),
-                    ),
-            ),
+          ClipRRect(
+            borderRadius:
+                const BorderRadius.vertical(top: Radius.circular(20)),
+            child: _buildPlantImage(commodity),
+          ),
+
           Padding(
             padding: const EdgeInsets.all(20),
             child: Column(
@@ -411,7 +401,46 @@ class _PlantSelectionPageState extends State<PlantSelectionPage> {
     );
   }
 
+  Widget _buildPlantImage(Commodity commodity) {
+    String? assetPath;
+    final name = commodity.name.toLowerCase();
+
+    if (name.contains("kangkung")) {
+      assetPath = 'assets/images/kangkung.png';
+    } else if (name.contains("pakcoy")) {
+      assetPath = 'assets/images/pakcoy.png';
+    } else if (name.contains("selada")) {
+      assetPath = 'assets/images/selada.png';
+    }
+
+    if (assetPath != null) {
+      return Image.asset(assetPath,
+          height: 180, width: double.infinity, fit: BoxFit.cover);
+    }
+
+    if (commodity.imagePath.isNotEmpty) {
+      if (commodity.imagePath.startsWith('http')) {
+        return Image.network(commodity.imagePath,
+            height: 180, width: double.infinity, fit: BoxFit.cover);
+      } else if (commodity.imagePath.startsWith('assets/')) {
+        return Image.asset(commodity.imagePath,
+            height: 180, width: double.infinity, fit: BoxFit.cover);
+      } else {
+        return Image.file(File(commodity.imagePath),
+            height: 180, width: double.infinity, fit: BoxFit.cover);
+      }
+    }
+
+    return Container(
+      height: 180,
+      width: double.infinity,
+      color: Colors.grey.shade200,
+      child: const Icon(Icons.image, size: 50, color: Colors.grey),
+    );
+  }
+
   Widget _buildDatePicker() {
+
     return GestureDetector(
       onTap: () async {
         final picked = await showDatePicker(
