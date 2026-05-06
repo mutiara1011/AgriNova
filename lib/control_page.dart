@@ -77,8 +77,10 @@ class _ControlPageState extends State<ControlPage> {
       ),
       body: RefreshIndicator(
         onRefresh: () async {
-          await context.read<CalibrationProvider>().fetchCalibrationData();
-          await context.read<SensorProvider>().fetchLatestData();
+          final calProvider = context.read<CalibrationProvider>();
+          final senProvider = context.read<SensorProvider>();
+          await calProvider.fetchCalibrationData();
+          await senProvider.fetchLatestData();
         },
         color: const Color(0xff03AF55),
         child: SingleChildScrollView(
@@ -255,7 +257,7 @@ class _ControlPageState extends State<ControlPage> {
           Switch(
             value: value,
             onChanged: disabled ? null : onChanged,
-            activeColor: Colors.white,
+            activeThumbColor: Colors.white,
             activeTrackColor: const Color(0xff03AF55),
             inactiveTrackColor: Colors.grey.shade300,
           ),

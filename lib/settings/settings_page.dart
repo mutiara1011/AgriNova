@@ -6,7 +6,6 @@ import 'about_page.dart';
 import 'package:agrinova/notification/notification_controller.dart';
 import 'theme_controller.dart';
 import '../providers/plant_provider.dart';
-import '../providers/sensor_provider.dart';
 import '../onboarding/plant_selection_page.dart';
 import '../history/cycle_history_page.dart';
 
@@ -19,8 +18,6 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage> {
   bool notifikasi = true;
   bool modeGelap = false;
-  DateTime startDate = DateTime.now().subtract(const Duration(days: 13));
-  int get hst => DateTime.now().difference(startDate).inDays + 1;
 
   @override
   void initState() {
@@ -248,8 +245,9 @@ class _SettingsPageState extends State<SettingsPage> {
           _listItem('Lama Tanam', '${plant.hst} Hari Setelah Tanam', Icons.calendar_today_outlined),
           const Divider(indent: 50, endIndent: 20),
           _listItem('Parameter pH Ideal', '${plant.targetPhMin} – ${plant.targetPhMax}', Icons.opacity),
+          _listItem('Parameter TDS (Veg)', '${plant.targetTdsVegetatifMin.toInt()} – ${plant.targetTdsVegetatifMax.toInt()} PPM', Icons.science_outlined),
           const Divider(indent: 50, endIndent: 20),
-          _listItem('Parameter TDS Ideal', '${plant.targetTdsMin.toInt()} – ${plant.targetTdsMax.toInt()} PPM', Icons.science_outlined),
+          _listItem('Parameter TDS (Pem)', '${plant.targetTdsPembesaranMin.toInt()} – ${plant.targetTdsPembesaranMax.toInt()} PPM', Icons.science_outlined),
           const Divider(indent: 50, endIndent: 20),
           ListTile(
             leading: Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: Colors.grey.withValues(alpha: 0.1), shape: BoxShape.circle), child: const Icon(Icons.edit_calendar_outlined, size: 20, color: Colors.grey)),
@@ -315,14 +313,15 @@ class _SettingsPageState extends State<SettingsPage> {
             onPressed: () async {
               Navigator.pop(context);
               final provider = context.read<PlantProvider>();
-              final historyData = context.read<SensorProvider>().historyData;
+              final notifController = context.read<NotificationController>();
+              final fuzzyController = context.read<FuzzyController>();
               
-              // 1. Akhiri siklus dan simpan data
-              await provider.endCycle(historyData);
+              // 1. Akhiri siklus di Backend
+              await provider.endCycle();
               
               // 2. Reset Notifikasi & Rekomendasi
-              context.read<NotificationController>().clearNotifications();
-              context.read<FuzzyController>().clearFuzzyLog();
+              notifController.clearNotifications();
+              fuzzyController.clearFuzzyLog();
               
               // 3. Kembali ke Halaman Onboarding
               if (context.mounted) {
@@ -372,7 +371,7 @@ class _SettingsPageState extends State<SettingsPage> {
       trailing: Switch(
         value: value,
         onChanged: onChanged,
-        activeColor: Colors.white,
+        activeThumbColor: Colors.white,
         activeTrackColor: const Color(0xff03AF55),
         inactiveTrackColor: Colors.grey.shade300,
       ),
@@ -390,10 +389,9 @@ class _SettingsPageState extends State<SettingsPage> {
 
 class _PremiumCard extends StatelessWidget {
   final Widget child;
-  final Color? color;
   final EdgeInsetsGeometry? padding;
 
-  const _PremiumCard({required this.child, this.color, this.padding});
+  const _PremiumCard({required this.child, this.padding});
 
   @override
   Widget build(BuildContext context) {
@@ -401,7 +399,7 @@ class _PremiumCard extends StatelessWidget {
     return Container(
       padding: padding ?? const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: color ?? Theme.of(context).cardColor,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
@@ -420,22 +418,3 @@ class _PremiumCard extends StatelessWidget {
   }
 }
 
-// ================= REUSABLE ITEM =================
-class _ListItem extends StatelessWidget {
-  final String title;
-  final String value;
-
-  const _ListItem(this.title, this.value);
-
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      title: Text(title),
-      trailing: Text(
-        value,
-        style: const TextStyle(fontWeight: FontWeight.w600),
-      ),
-    );
-  }
-}

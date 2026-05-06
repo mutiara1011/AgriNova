@@ -144,4 +144,86 @@ class ApiService {
       return false;
     }
   }
+
+  // --- PLANT CYCLE API ---
+
+  Future<Map<String, dynamic>?> getActivePlantCycle() async {
+    try {
+      final response = await http
+          .get(Uri.parse('$baseUrl/plants/active?deviceId=$deviceId'))
+          .timeout(const Duration(seconds: 10));
+      if (response.statusCode == 200) {
+        final json = jsonDecode(response.body);
+        return json['data'];
+      }
+    } catch (e) {
+      print('Error getActivePlantCycle: $e');
+    }
+    return null;
+  }
+
+  Future<bool> startPlantCycle({
+    required String name,
+    required DateTime startDate,
+    required double targetPhMin,
+    required double targetPhMax,
+    required double targetTdsVegetatifMin,
+    required double targetTdsVegetatifMax,
+    required double targetTdsPembesaranMin,
+    required double targetTdsPembesaranMax,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/plants/start'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          "deviceId": deviceId,
+          "name": name,
+          "startDate": startDate.toIso8601String(),
+          "targetPhMin": targetPhMin,
+          "targetPhMax": targetPhMax,
+          "targetTdsVegetatifMin": targetTdsVegetatifMin,
+          "targetTdsVegetatifMax": targetTdsVegetatifMax,
+          "targetTdsPembesaranMin": targetTdsPembesaranMin,
+          "targetTdsPembesaranMax": targetTdsPembesaranMax,
+        }),
+      ).timeout(const Duration(seconds: 10));
+      return response.statusCode == 201 || response.statusCode == 200;
+    } catch (e) {
+      print('Error startPlantCycle: $e');
+      return false;
+    }
+  }
+
+  Future<bool> endPlantCycle({String notes = ""}) async {
+    try {
+      final response = await http.put(
+        Uri.parse('$baseUrl/plants/end'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          "deviceId": deviceId,
+          "notes": notes,
+        }),
+      ).timeout(const Duration(seconds: 10));
+      return response.statusCode == 200;
+    } catch (e) {
+      print('Error endPlantCycle: $e');
+      return false;
+    }
+  }
+
+  Future<List<dynamic>> getPlantHistory({int page = 1, int limit = 10}) async {
+    try {
+      final response = await http
+          .get(Uri.parse('$baseUrl/plants/history?deviceId=$deviceId&page=$page&limit=$limit'))
+          .timeout(const Duration(seconds: 10));
+      if (response.statusCode == 200) {
+        final json = jsonDecode(response.body);
+        return json['data']['cycles'] ?? [];
+      }
+    } catch (e) {
+      print('Error getPlantHistory: $e');
+    }
+    return [];
+  }
 }

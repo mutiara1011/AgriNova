@@ -12,6 +12,8 @@ import 'package:agrinova/models/sensor_data.dart';
 import 'package:agrinova/providers/plant_provider.dart';
 import 'package:agrinova/notification/notification_controller.dart';
 import 'package:agrinova/notification/notification_model.dart';
+import 'package:agrinova/onboarding/plant_selection_page.dart';
+import 'package:agrinova/models/plant_cycle.dart';
 
 class DashboardPage extends StatefulWidget {
   final Function(int) onTabChange;
@@ -27,7 +29,6 @@ class _DashboardPageState extends State<DashboardPage> {
   late Timer slideTimer;
   int currentIndex = 0;
   final int chartsLength = 7; // 6 + ketinggian air = 7
-  bool _isErrorDismissed = false;
   static bool _hasShownSystemAlert = false;
 
   @override
@@ -35,7 +36,9 @@ class _DashboardPageState extends State<DashboardPage> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final plant = context.read<PlantProvider>().activePlant;
-      context.read<SensorProvider>().fetchHistoryData(startDate: plant?.startDate);
+      context.read<SensorProvider>().fetchHistoryData(
+        startDate: plant?.startDate,
+      );
     });
 
     slideTimer = Timer.periodic(const Duration(seconds: 5), (_) {
@@ -66,21 +69,18 @@ class _DashboardPageState extends State<DashboardPage> {
     final plant = context.read<PlantProvider>().activePlant;
     await provider.fetchLatestData();
     await provider.fetchHistoryData(startDate: plant?.startDate);
-    setState(() {
-      _isErrorDismissed = false;
-    });
   }
-
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       extendBodyBehindAppBar: true,
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: _appBar(),
+      appBar: _appBar(context),
       body: Consumer<SensorProvider>(
         builder: (context, sensor, child) {
-          final hasNoData = sensor.latestData == null && sensor.historyData.isEmpty;
+          final hasNoData =
+              sensor.latestData == null && sensor.historyData.isEmpty;
 
           // 🔥 SYSTEM ALERT POP-UP (Triggered once if errors exist)
           if (!_hasShownSystemAlert && sensor.latestData != null) {
@@ -97,30 +97,42 @@ class _DashboardPageState extends State<DashboardPage> {
             onRefresh: _onRefresh,
             color: const Color(0xff03AF55),
             child: hasNoData && sensor.isLoading
-                ? const Center(child: CircularProgressIndicator(color: Color(0xff03AF55)))
+                ? const Center(
+                    child: CircularProgressIndicator(color: Color(0xff03AF55)),
+                  )
                 : hasNoData
-                    ? _emptyStateView(context)
-                    : SingleChildScrollView(
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        padding: EdgeInsets.fromLTRB(16, MediaQuery.of(context).padding.top + 70, 16, 100),
-                        child: Column(
-                          children: [
-                            _plantStatusOverview(context, sensor.latestData),
-                            const SizedBox(height: 24),
-                            _sectionTitle("Monitoring Real-time"),
-                            const SizedBox(height: 8),
-                            _sensorGrid(context, sensor.latestData),
-                            const SizedBox(height: 24),
-                            _sectionTitle("Analisis Tren"),
-                            const SizedBox(height: 8),
-                            _chartSlider(context, sensor),
-                            const SizedBox(height: 24),
-                            _fuzzyStatusCard(context),
-                            const SizedBox(height: 12),
-                            _lastUpdatedText(context, sensor),
-                          ],
-                        ),
-                      ),
+                ? _emptyStateView(context)
+                : SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: EdgeInsets.fromLTRB(
+                      16,
+                      MediaQuery.of(context).padding.top + 20,
+                      16,
+                      100,
+                    ),
+                    child: Column(
+                      children: [
+                        _plantStatusOverview(context, sensor.latestData),
+                        if (context.watch<PlantProvider>().activePlant !=
+                            null) ...[
+                          const SizedBox(height: 16),
+                          _plantDetailsSection(context),
+                        ],
+                        const SizedBox(height: 24),
+                        _sectionTitle("Monitoring Real-time"),
+                        const SizedBox(height: 8),
+                        _sensorGrid(context, sensor.latestData),
+                        const SizedBox(height: 24),
+                        _sectionTitle("Analisis Tren"),
+                        const SizedBox(height: 8),
+                        _chartSlider(context, sensor),
+                        const SizedBox(height: 24),
+                        _fuzzyStatusCard(context),
+                        const SizedBox(height: 12),
+                        _lastUpdatedText(context, sensor),
+                      ],
+                    ),
+                  ),
           );
         },
       ),
@@ -143,7 +155,11 @@ class _DashboardPageState extends State<DashboardPage> {
                 color: const Color(0xff03AF55).withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.cloud_off_rounded, size: 64, color: Color(0xff03AF55)),
+              child: const Icon(
+                Icons.cloud_off_rounded,
+                size: 64,
+                color: Color(0xff03AF55),
+              ),
             ),
             const SizedBox(height: 24),
             const Text(
@@ -154,7 +170,11 @@ class _DashboardPageState extends State<DashboardPage> {
             const Text(
               "Pastikan perangkat Anda terhubung ke internet dan alat AgriNova sedang aktif.",
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 14, color: Colors.grey, fontWeight: FontWeight.w500),
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey,
+                fontWeight: FontWeight.w500,
+              ),
             ),
             const SizedBox(height: 32),
             SizedBox(
@@ -162,12 +182,17 @@ class _DashboardPageState extends State<DashboardPage> {
               child: ElevatedButton.icon(
                 onPressed: _onRefresh,
                 icon: const Icon(Icons.refresh_rounded, size: 20),
-                label: const Text("COBA LAGI", style: TextStyle(fontWeight: FontWeight.w900)),
+                label: const Text(
+                  "COBA LAGI",
+                  style: TextStyle(fontWeight: FontWeight.w900),
+                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xff03AF55),
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                   elevation: 0,
                 ),
               ),
@@ -183,7 +208,11 @@ class _DashboardPageState extends State<DashboardPage> {
       alignment: Alignment.centerLeft,
       child: Text(
         title,
-        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, letterSpacing: -0.5),
+        style: const TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.w900,
+          letterSpacing: -0.5,
+        ),
       ),
     );
   }
@@ -197,11 +226,17 @@ class _DashboardPageState extends State<DashboardPage> {
       children: [
         if (isLive) ...[
           Container(
-            width: 8, height: 8,
+            width: 8,
+            height: 8,
             decoration: BoxDecoration(
               color: const Color(0xff03AF55),
               shape: BoxShape.circle,
-              boxShadow: [BoxShadow(color: const Color(0xff03AF55).withValues(alpha: 0.5), blurRadius: 6)],
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xff03AF55).withValues(alpha: 0.5),
+                  blurRadius: 6,
+                ),
+              ],
             ),
           ),
           const SizedBox(width: 6),
@@ -209,7 +244,9 @@ class _DashboardPageState extends State<DashboardPage> {
         Opacity(
           opacity: 0.6,
           child: Text(
-            isLive ? "LIVE · Diperbarui $timeStr" : "Data diperbarui pada $timeStr",
+            isLive
+                ? "LIVE · Diperbarui $timeStr"
+                : "Data diperbarui pada $timeStr",
             style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
           ),
         ),
@@ -221,13 +258,24 @@ class _DashboardPageState extends State<DashboardPage> {
   List<String> _getErrorMessages(SensorData? data) {
     final msgs = <String>[];
     if (data == null) return msgs;
-    if (data.airTemp == -1 && data.airHumidity == -1) msgs.add("Sensor Suhu/Kelembaban Udara (DHT22) Mati/Terlepas!");
-    if (data.waterTemp == -1) msgs.add("Sensor Suhu Air (DS18B20) Mati/Terlepas!");
-    if (data.tdsPPM == 0 && data.waterTemp > 0) msgs.add("Sensor Nutrisi (TDS) Mati/Terlepas!");
-    if (data.waterTemp > 35) msgs.add("Suhu Air Terlalu Panas! (${data.waterTemp.toStringAsFixed(1)}°C)");
-    if (data.tdsPPM > 1000) msgs.add("Nutrisi TDS Terlalu Tinggi! (${data.tdsPPM.toStringAsFixed(0)} ppm)");
-    if (data.phValue < 3.0 || data.phValue > 10.0) msgs.add("pH Air Kritis! (${data.phValue.toStringAsFixed(1)})");
-    if (data.systemState == 7 && msgs.isEmpty) msgs.add("Terjadi Kesalahan Sistem pada Alat!");
+    if (data.airTemp == -1 && data.airHumidity == -1)
+      msgs.add("Sensor Suhu/Kelembaban Udara (DHT22) Mati/Terlepas!");
+    if (data.waterTemp == -1)
+      msgs.add("Sensor Suhu Air (DS18B20) Mati/Terlepas!");
+    if (data.tdsPPM == 0 && data.waterTemp > 0)
+      msgs.add("Sensor Nutrisi (TDS) Mati/Terlepas!");
+    if (data.waterTemp > 35)
+      msgs.add(
+        "Suhu Air Terlalu Panas! (${data.waterTemp.toStringAsFixed(1)}°C)",
+      );
+    if (data.tdsPPM > 1000)
+      msgs.add(
+        "Nutrisi TDS Terlalu Tinggi! (${data.tdsPPM.toStringAsFixed(0)} ppm)",
+      );
+    if (data.phValue < 3.0 || data.phValue > 10.0)
+      msgs.add("pH Air Kritis! (${data.phValue.toStringAsFixed(1)})");
+    if (data.systemState == 7 && msgs.isEmpty)
+      msgs.add("Terjadi Kesalahan Sistem pada Alat!");
     return msgs;
   }
 
@@ -251,7 +299,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 color: Colors.black.withValues(alpha: 0.2),
                 blurRadius: 30,
                 offset: const Offset(0, 15),
-              )
+              ),
             ],
           ),
           child: Column(
@@ -274,22 +322,34 @@ class _DashboardPageState extends State<DashboardPage> {
                   children: [
                     // Subtle background pattern
                     Positioned(
-                      right: -20, top: -20,
-                      child: Icon(Icons.warning_amber_rounded, size: 150, color: Colors.white.withValues(alpha: 0.1)),
+                      right: -20,
+                      top: -20,
+                      child: Icon(
+                        Icons.warning_amber_rounded,
+                        size: 150,
+                        color: Colors.white.withValues(alpha: 0.1),
+                      ),
                     ),
                     Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.2),
                         shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 2),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.3),
+                          width: 2,
+                        ),
                       ),
-                      child: const Icon(Icons.priority_high_rounded, size: 40, color: Colors.white),
+                      child: const Icon(
+                        Icons.priority_high_rounded,
+                        size: 40,
+                        color: Colors.white,
+                      ),
                     ),
                   ],
                 ),
               ),
-              
+
               Padding(
                 padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
                 child: Column(
@@ -297,8 +357,8 @@ class _DashboardPageState extends State<DashboardPage> {
                     Text(
                       "Peringatan Sistem!",
                       style: TextStyle(
-                        fontSize: 22, 
-                        fontWeight: FontWeight.w900, 
+                        fontSize: 22,
+                        fontWeight: FontWeight.w900,
                         color: isDark ? Colors.white : const Color(0xff1F2937),
                         letterSpacing: -0.5,
                       ),
@@ -308,8 +368,10 @@ class _DashboardPageState extends State<DashboardPage> {
                       "Ditemukan beberapa anomali pada alat AgriNova Anda:",
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        fontSize: 14, 
-                        color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                        fontSize: 14,
+                        color: isDark
+                            ? Colors.grey.shade400
+                            : Colors.grey.shade600,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -322,35 +384,52 @@ class _DashboardPageState extends State<DashboardPage> {
                 child: Container(
                   constraints: const BoxConstraints(maxHeight: 200),
                   child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 12,
+                    ),
                     child: Column(
-                      children: errors.map((msg) => Container(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: const Color(0xffEF4444).withValues(alpha: 0.05),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: const Color(0xffEF4444).withValues(alpha: 0.1)),
-                        ),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Icon(Icons.error_outline_rounded, size: 16, color: Color(0xffEF4444)),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Text(
-                                msg, 
-                                style: const TextStyle(
-                                  fontSize: 13, 
-                                  fontWeight: FontWeight.w600, 
-                                  color: Color(0xffB91C1C),
-                                  height: 1.3,
+                      children: errors
+                          .map(
+                            (msg) => Container(
+                              margin: const EdgeInsets.only(bottom: 8),
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: const Color(
+                                  0xffEF4444,
+                                ).withValues(alpha: 0.05),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: const Color(
+                                    0xffEF4444,
+                                  ).withValues(alpha: 0.1),
                                 ),
                               ),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Icon(
+                                    Icons.error_outline_rounded,
+                                    size: 16,
+                                    color: Color(0xffEF4444),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(
+                                      msg,
+                                      style: const TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                        color: Color(0xffB91C1C),
+                                        height: 1.3,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ],
-                        ),
-                      )).toList(),
+                          )
+                          .toList(),
                     ),
                   ),
                 ),
@@ -369,20 +448,32 @@ class _DashboardPageState extends State<DashboardPage> {
                           if (context.mounted) Navigator.pop(context);
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: isMuted ? Colors.grey.shade200 : const Color(0xff1F2937),
-                          foregroundColor: isMuted ? Colors.grey.shade700 : Colors.white,
+                          backgroundColor: isMuted
+                              ? Colors.grey.shade200
+                              : const Color(0xff1F2937),
+                          foregroundColor: isMuted
+                              ? Colors.grey.shade700
+                              : Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
                           elevation: 0,
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(isMuted ? Icons.volume_up : Icons.volume_off, size: 20),
+                            Icon(
+                              isMuted ? Icons.volume_up : Icons.volume_off,
+                              size: 20,
+                            ),
                             const SizedBox(width: 10),
                             Text(
-                              isMuted ? "AKTIFKAN BUZZER" : "MATIKAN BUZZER", 
-                              style: const TextStyle(fontWeight: FontWeight.w900, letterSpacing: 0.5),
+                              isMuted ? "AKTIFKAN BUZZER" : "MATIKAN BUZZER",
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 0.5,
+                              ),
                             ),
                           ],
                         ),
@@ -395,12 +486,14 @@ class _DashboardPageState extends State<DashboardPage> {
                         onPressed: () => Navigator.pop(context),
                         style: TextButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
                         ),
                         child: Text(
-                          "SAYA MENGERTI", 
+                          "SAYA MENGERTI",
                           style: TextStyle(
-                            color: Colors.grey.shade500, 
+                            color: Colors.grey.shade500,
                             fontWeight: FontWeight.w900,
                             letterSpacing: 1,
                           ),
@@ -417,9 +510,10 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  AppBar _appBar() {
+  AppBar _appBar(BuildContext context) {
     return AppBar(
-      backgroundColor: Colors.transparent,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      surfaceTintColor: Colors.transparent,
       elevation: 0,
       centerTitle: false,
       title: Row(
@@ -435,14 +529,24 @@ class _DashboardPageState extends State<DashboardPage> {
           const SizedBox(width: 12),
           const Text(
             'AGRINOVA',
-            style: TextStyle(fontWeight: FontWeight.w900, fontSize: 22, letterSpacing: 0.5),
+            style: TextStyle(
+              fontWeight: FontWeight.w900,
+              fontSize: 22,
+              letterSpacing: 0.5,
+            ),
           ),
         ],
       ),
       actions: [
         IconButton(
-          onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationPage())),
-          icon: const Icon(Icons.notifications_active_outlined, color: Color(0xff03AF55)),
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const NotificationPage()),
+          ),
+          icon: const Icon(
+            Icons.notifications_active_outlined,
+            color: Color(0xff03AF55),
+          ),
         ),
         const SizedBox(width: 8),
       ],
@@ -451,21 +555,106 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Widget _plantStatusOverview(BuildContext context, SensorData? data) {
     final plant = context.watch<PlantProvider>().activePlant;
-    final hst = plant?.hst.toString() ?? '0';
-    final name = plant?.name ?? 'Belum ada tanaman';
+
+    if (plant == null) {
+      return _PremiumCard(
+        padding: EdgeInsets.zero,
+        child: InkWell(
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const PlantSelectionPage()),
+          ),
+          borderRadius: BorderRadius.circular(28),
+          child: Container(
+            height: 160,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(28),
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xff03AF55), Color(0xff028A43)],
+              ),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text(
+                        "SIAP MENANAM?",
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 1.5,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        "Mulai Siklus\nBaru Sekarang",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w900,
+                          height: 1.2,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Text(
+                          "PILIH TANAMAN",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(
+                  Icons.add_circle_outline_rounded,
+                  size: 80,
+                  color: Colors.white24,
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    final hst = plant.hst.toString();
+    final name = plant.name;
 
     String getPhase() {
       final days = int.tryParse(hst) ?? 0;
       if (name.toLowerCase().contains("kangkung")) {
-        if (days < 7) return "PERSEMAIAN";
-        if (days < 18) return "VEGETATIF";
+        if (days <= 14) return "VEGETATIF";
+        if (days < 21) return "PEMBESARAN";
         return "SIAP PANEN";
-      } else if (name.toLowerCase().contains("pakcoy") || name.toLowerCase().contains("selada")) {
-        if (days < 10) return "PERSEMAIAN";
-        if (days < 35) return "VEGETATIF";
+      } else if (name.toLowerCase().contains("pakcoy")) {
+        if (days <= 20) return "VEGETATIF";
+        if (days < 35) return "PEMBESARAN";
+        return "SIAP PANEN";
+      } else if (name.toLowerCase().contains("selada")) {
+        if (days <= 18) return "VEGETATIF";
+        if (days < 30) return "PEMBESARAN";
         return "SIAP PANEN";
       }
-      return days < 14 ? "VEGETATIF AWAL" : "VEGETATIF";
+      return days < 15 ? "VEGETATIF" : "PEMBESARAN";
     }
 
     return _PremiumCard(
@@ -475,13 +664,20 @@ class _DashboardPageState extends State<DashboardPage> {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(28),
           color: const Color(0xff03AF55).withValues(alpha: 0.1),
+          image: const DecorationImage(
+            image: AssetImage('assets/images/selada_romaine.jpg'),
+            fit: BoxFit.cover,
+          ),
         ),
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(28),
             gradient: LinearGradient(
               begin: Alignment.bottomRight,
-              colors: [Colors.black.withValues(alpha: 0.8), Colors.black.withValues(alpha: 0.2)],
+              colors: [
+                Colors.black.withValues(alpha: 0.8),
+                Colors.black.withValues(alpha: 0.2),
+              ],
             ),
           ),
           padding: const EdgeInsets.all(20),
@@ -494,29 +690,49 @@ class _DashboardPageState extends State<DashboardPage> {
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xff03AF55),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
                         getPhase(),
-                        style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w900,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       name.toUpperCase(),
-                      style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: -0.5),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -0.5,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        const Icon(Icons.psychology_outlined, color: Colors.white60, size: 14),
+                        const Icon(
+                          Icons.psychology_outlined,
+                          color: Colors.white60,
+                          size: 14,
+                        ),
                         const SizedBox(width: 6),
                         const Text(
                           "FUZZY MAMDANI ACTIVE",
-                          style: TextStyle(color: Colors.white60, fontSize: 10, fontWeight: FontWeight.w900),
+                          style: TextStyle(
+                            color: Colors.white60,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w900,
+                          ),
                         ),
                       ],
                     ),
@@ -529,11 +745,20 @@ class _DashboardPageState extends State<DashboardPage> {
                 children: [
                   Text(
                     hst,
-                    style: const TextStyle(color: Colors.white, fontSize: 42, fontWeight: FontWeight.w900, height: 1),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 42,
+                      fontWeight: FontWeight.w900,
+                      height: 1,
+                    ),
                   ),
                   const Text(
-                    "HST",
-                    style: TextStyle(color: Colors.white60, fontSize: 12, fontWeight: FontWeight.w900),
+                    "HSPT",
+                    style: TextStyle(
+                      color: Colors.white60,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w900,
+                    ),
                   ),
                 ],
               ),
@@ -542,14 +767,213 @@ class _DashboardPageState extends State<DashboardPage> {
         ),
       ),
     );
-
   }
 
+  Widget _plantDetailsSection(BuildContext context) {
+    PlantCycle? plant = context.watch<PlantProvider>().activePlant;
+    if (plant == null) return const SizedBox();
+
+    final dateFormat = DateFormat('dd MMM yyyy');
+    final startStr = dateFormat.format(plant.startDate);
+
+    // Estimate harvest based on plant type
+    int estDays = 30;
+    if (plant.name.toLowerCase().contains("kangkung")) estDays = 21;
+    if (plant.name.toLowerCase().contains("pakcoy")) estDays = 35;
+    if (plant.name.toLowerCase().contains("selada")) estDays = 45;
+
+    final harvestDate = plant.startDate.add(Duration(days: estDays));
+    final harvestStr = dateFormat.format(harvestDate);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _sectionTitle("Informasi Siklus Tanam"),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _infoBox(Icons.calendar_month, "Mulai Tanam", startStr),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _infoBox(
+                Icons.event_available,
+                "Perkiraan Panen",
+                harvestStr,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _infoBox(
+                Icons.science_outlined,
+                "Target pH",
+                "${plant.targetPhMin} - ${plant.targetPhMax}",
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _infoBox(
+                Icons.water_drop_outlined,
+                "TDS (Veg)",
+                "${plant.targetTdsVegetatifMin.toInt()} - ${plant.targetTdsVegetatifMax.toInt()} PPM",
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _infoBox(
+                Icons.water_drop_outlined,
+                "TDS (Pem)",
+                "${plant.targetTdsPembesaranMin.toInt()} - ${plant.targetTdsPembesaranMax.toInt()} PPM",
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Spacer(),
+          ],
+        ),
+        if (harvestDate.difference(DateTime.now()).inDays <= 5) ...[
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            height: 54,
+            child: ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xff03AF55),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                elevation: 0,
+              ),
+              onPressed: () => _showHarvestDialog(
+                context,
+                harvestDate.difference(DateTime.now()).inDays,
+                plant,
+              ),
+              icon: const Icon(Icons.grass, color: Colors.white),
+              label: const Text(
+                "SELESAI PANEN SEKARANG",
+                style: TextStyle(
+                  fontWeight: FontWeight.w900,
+                  fontSize: 14,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  void _showHarvestDialog(
+    BuildContext context,
+    int daysLeft,
+    PlantCycle plant,
+  ) {
+    bool isEarly = daysLeft > 5;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          isEarly ? "Panen Lebih Awal?" : "Selesai Panen?",
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        content: Text(
+          isEarly
+              ? "Siklus tanam belum mencapai perkiraan panen ($daysLeft hari lagi). Apakah kamu ingin mengakhiri siklus ini lebih awal (misal: karena gagal panen, busuk, dll)?"
+              : "Siklus tanam saat ini akan diakhiri. Riwayat grafik dan sensor akan disimpan ke history, dan notifikasi akan direset.",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Batal", style: TextStyle(color: Colors.grey)),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              final provider = context.read<PlantProvider>();
+              final notifController = context.read<NotificationController>();
+              final fuzzyController = context.read<FuzzyController>();
+
+              // 1. Akhiri siklus di Backend
+              await provider.endCycle(
+                notes: isEarly
+                    ? "Panen lebih awal / Gagal panen"
+                    : "Panen sukses",
+              );
+
+              // 2. Reset Notifikasi & Rekomendasi
+              notifController.clearNotifications();
+              fuzzyController.clearFuzzyLog();
+
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      "Siklus tanam berhasil diakhiri.",
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    backgroundColor: Color(0xff03AF55),
+                  ),
+                );
+              }
+            },
+            child: Text(
+              isEarly ? "Ya, Akhiri Siklus" : "Ya, Panen",
+              style: const TextStyle(
+                color: Colors.red,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _infoBox(IconData icon, String title, String value) {
+    return _PremiumCard(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 16, color: const Color(0xff03AF55)),
+              const SizedBox(width: 8),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.grey.shade500,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900),
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _sensorGrid(BuildContext context, SensorData? data) {
     final width = MediaQuery.of(context).size.width;
     final isSmall = width < 380;
-    
+
     return GridView.count(
       crossAxisCount: isSmall ? 1 : 2,
       shrinkWrap: true,
@@ -559,14 +983,62 @@ class _DashboardPageState extends State<DashboardPage> {
       mainAxisSpacing: 16,
       childAspectRatio: isSmall ? 1.8 : 1.4,
       children: [
-        _PremiumSensorTile(title: 'Level Air', value: '12.0', unit: 'cm', icon: Icons.water_drop, color: Colors.blue),
-        _PremiumSensorTile(title: 'Suhu Udara', value: data?.airTemp.toStringAsFixed(1) ?? '--', unit: '°C', icon: Icons.air, color: Colors.orange),
-        _PremiumSensorTile(title: 'Kelembapan', value: data?.airHumidity.toStringAsFixed(0) ?? '--', unit: '%', icon: Icons.cloud_outlined, color: Colors.lightBlue),
-        _PremiumSensorTile(title: 'Suhu Air', value: data?.waterTemp.toStringAsFixed(1) ?? '--', unit: '°C', icon: Icons.thermostat, color: Colors.cyan),
-        _PremiumSensorTile(title: 'Cahaya', value: data?.lightLux.toStringAsFixed(0) ?? '--', unit: 'Lx', icon: Icons.wb_sunny_outlined, color: Colors.amber),
-        _PremiumSensorTile(title: 'Nutrisi/TDS', value: data?.tdsPPM.toStringAsFixed(0) ?? '--', unit: 'PPM', icon: Icons.science_outlined, color: Colors.deepPurple),
-        _PremiumSensorTile(title: 'pH Air', value: data?.phValue.toStringAsFixed(1) ?? '--', unit: '', icon: Icons.opacity, color: Colors.teal),
-        _PremiumSensorTile(title: 'Cuaca', value: 'Cerah', unit: '', icon: Icons.sunny, color: Colors.orangeAccent),
+        _PremiumSensorTile(
+          title: 'Level Air',
+          value: '12.0',
+          unit: 'cm',
+          icon: Icons.water_drop,
+          color: Colors.blue,
+        ),
+        _PremiumSensorTile(
+          title: 'Suhu Udara',
+          value: data?.airTemp.toStringAsFixed(1) ?? '--',
+          unit: '°C',
+          icon: Icons.air,
+          color: Colors.orange,
+        ),
+        _PremiumSensorTile(
+          title: 'Kelembapan',
+          value: data?.airHumidity.toStringAsFixed(0) ?? '--',
+          unit: '%',
+          icon: Icons.cloud_outlined,
+          color: Colors.lightBlue,
+        ),
+        _PremiumSensorTile(
+          title: 'Suhu Air',
+          value: data?.waterTemp.toStringAsFixed(1) ?? '--',
+          unit: '°C',
+          icon: Icons.thermostat,
+          color: Colors.cyan,
+        ),
+        _PremiumSensorTile(
+          title: 'Cahaya',
+          value: data?.lightLux.toStringAsFixed(0) ?? '--',
+          unit: 'Lx',
+          icon: Icons.wb_sunny_outlined,
+          color: Colors.amber,
+        ),
+        _PremiumSensorTile(
+          title: 'Nutrisi/TDS',
+          value: data?.tdsPPM.toStringAsFixed(0) ?? '--',
+          unit: 'PPM',
+          icon: Icons.science_outlined,
+          color: Colors.deepPurple,
+        ),
+        _PremiumSensorTile(
+          title: 'pH Air',
+          value: data?.phValue.toStringAsFixed(1) ?? '--',
+          unit: '',
+          icon: Icons.opacity,
+          color: Colors.teal,
+        ),
+        _PremiumSensorTile(
+          title: 'Cuaca',
+          value: 'Cerah',
+          unit: '',
+          icon: Icons.sunny,
+          color: Colors.orangeAccent,
+        ),
       ],
     );
   }
@@ -574,19 +1046,61 @@ class _DashboardPageState extends State<DashboardPage> {
   Widget _chartSlider(BuildContext context, SensorProvider sensor) {
     final data = sensor.latestData;
     final history = sensor.historyData;
-    
+
     final charts = [
-      _chartItem("Level Air", "12.0 cm", const Color(0xff0ea5e9), history, (d) => 12.0),
-      _chartItem("Suhu Udara", "${data?.airTemp.toStringAsFixed(1) ?? '--'}°C", const Color(0xfff97316), history, (d) => d.airTemp),
-      _chartItem("Kelembapan", "${data?.airHumidity.toStringAsFixed(1) ?? '--'}%", const Color(0xff3b82f6), history, (d) => d.airHumidity),
-      _chartItem("Suhu Air", "${data?.waterTemp.toStringAsFixed(1) ?? '--'}°C", const Color(0xff06b6d4), history, (d) => d.waterTemp),
-      _chartItem("Cahaya", "${data?.lightLux.toStringAsFixed(0) ?? '--'} Lux", const Color(0xffeab308), history, (d) => d.lightLux),
-      _chartItem("Nutrisi", "${data?.tdsPPM.toStringAsFixed(0) ?? '--'} PPM", const Color(0xff8b5cf6), history, (d) => d.tdsPPM),
-      _chartItem("pH Air", "${data?.phValue.toStringAsFixed(1) ?? '--'}", const Color(0xff14b8a6), history, (d) => d.phValue),
+      _chartItem(
+        "Level Air",
+        "12.0 cm",
+        const Color(0xff0ea5e9),
+        history,
+        (d) => 12.0,
+      ),
+      _chartItem(
+        "Suhu Udara",
+        "${data?.airTemp.toStringAsFixed(1) ?? '--'}°C",
+        const Color(0xfff97316),
+        history,
+        (d) => d.airTemp,
+      ),
+      _chartItem(
+        "Kelembapan",
+        "${data?.airHumidity.toStringAsFixed(1) ?? '--'}%",
+        const Color(0xff3b82f6),
+        history,
+        (d) => d.airHumidity,
+      ),
+      _chartItem(
+        "Suhu Air",
+        "${data?.waterTemp.toStringAsFixed(1) ?? '--'}°C",
+        const Color(0xff06b6d4),
+        history,
+        (d) => d.waterTemp,
+      ),
+      _chartItem(
+        "Cahaya",
+        "${data?.lightLux.toStringAsFixed(0) ?? '--'} Lux",
+        const Color(0xffeab308),
+        history,
+        (d) => d.lightLux,
+      ),
+      _chartItem(
+        "Nutrisi",
+        "${data?.tdsPPM.toStringAsFixed(0) ?? '--'} PPM",
+        const Color(0xff8b5cf6),
+        history,
+        (d) => d.tdsPPM,
+      ),
+      _chartItem(
+        "pH Air",
+        data?.phValue.toStringAsFixed(1) ?? '--',
+        const Color(0xff14b8a6),
+        history,
+        (d) => d.phValue,
+      ),
     ];
 
     final screenHeight = MediaQuery.of(context).size.height;
-    
+
     return _PremiumCard(
       child: Column(
         children: [
@@ -612,17 +1126,27 @@ class _DashboardPageState extends State<DashboardPage> {
                     width: isActive ? 18 : 6,
                     height: 6,
                     decoration: BoxDecoration(
-                      color: isActive ? const Color(0xff03AF55) : Colors.grey.withValues(alpha: 0.3),
+                      color: isActive
+                          ? const Color(0xff03AF55)
+                          : Colors.grey.withValues(alpha: 0.3),
                       borderRadius: BorderRadius.circular(10),
                     ),
                   );
                 }),
               ),
               TextButton.icon(
-                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const DetailChartPage())),
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const DetailChartPage()),
+                ),
                 icon: const Icon(Icons.analytics_outlined, size: 18),
-                label: const Text("Detail", style: TextStyle(fontWeight: FontWeight.w900)),
-                style: TextButton.styleFrom(foregroundColor: const Color(0xff03AF55)),
+                label: const Text(
+                  "Detail",
+                  style: TextStyle(fontWeight: FontWeight.w900),
+                ),
+                style: TextButton.styleFrom(
+                  foregroundColor: const Color(0xff03AF55),
+                ),
               ),
             ],
           ),
@@ -631,17 +1155,36 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  Widget _chartItem(String title, String value, Color color, List<SensorData> history, double Function(SensorData) selector) {
-    final spots = List.generate(history.length, (i) => FlSpot(i.toDouble(), selector(history[i])));
-    
+  Widget _chartItem(
+    String title,
+    String value,
+    Color color,
+    List<SensorData> history,
+    double Function(SensorData) selector,
+  ) {
+    final spots = List.generate(
+      history.length,
+      (i) => FlSpot(i.toDouble(), selector(history[i])),
+    );
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
-            Text(value, style: TextStyle(color: color, fontWeight: FontWeight.w900, fontSize: 16)),
+            Text(
+              title,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
+            ),
+            Text(
+              value,
+              style: TextStyle(
+                color: color,
+                fontWeight: FontWeight.w900,
+                fontSize: 16,
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 20),
@@ -651,7 +1194,10 @@ class _DashboardPageState extends State<DashboardPage> {
               gridData: FlGridData(
                 show: true,
                 drawVerticalLine: false,
-                getDrawingHorizontalLine: (v) => FlLine(color: Colors.grey.withValues(alpha: 0.05), strokeWidth: 1),
+                getDrawingHorizontalLine: (v) => FlLine(
+                  color: Colors.grey.withValues(alpha: 0.05),
+                  strokeWidth: 1,
+                ),
               ),
               titlesData: FlTitlesData(
                 leftTitles: AxisTitles(
@@ -664,35 +1210,52 @@ class _DashboardPageState extends State<DashboardPage> {
                       if (title.contains("Kelembapan")) unit = "%";
                       if (title.contains("Cahaya")) unit = "Lx";
                       if (title.contains("Nutrisi")) unit = "";
-                      
+
                       return Text(
                         "${value.toStringAsFixed(0)}$unit",
-                        style: TextStyle(color: Colors.grey.shade400, fontSize: 8, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          color: Colors.grey.shade400,
+                          fontSize: 8,
+                          fontWeight: FontWeight.bold,
+                        ),
                       );
                     },
                   ),
                 ),
                 rightTitles: AxisTitles(
-                  sideTitles: SideTitles(showTitles: true, reservedSize: 10, getTitlesWidget: (v, m) => const SizedBox()),
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 10,
+                    getTitlesWidget: (v, m) => const SizedBox(),
+                  ),
                 ),
-                topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                topTitles: const AxisTitles(
+                  sideTitles: SideTitles(showTitles: false),
+                ),
                 bottomTitles: AxisTitles(
                   sideTitles: SideTitles(
                     showTitles: true,
                     reservedSize: 22,
-                    interval: history.length > 10 ? (history.length / 5).toDouble() : 1,
+                    interval: history.length > 10
+                        ? (history.length / 5).toDouble()
+                        : 1,
                     getTitlesWidget: (value, meta) {
                       final idx = value.toInt();
-                      if (idx < 0 || idx >= history.length) return const SizedBox();
-                      
+                      if (idx < 0 || idx >= history.length)
+                        return const SizedBox();
+
                       final time = history[idx].createdAt ?? DateTime.now();
                       final timeStr = DateFormat('HH.mm').format(time);
-                      
+
                       return Padding(
                         padding: const EdgeInsets.only(top: 8),
                         child: Text(
                           timeStr,
-                          style: TextStyle(color: Colors.grey.shade400, fontSize: 8, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                            color: Colors.grey.shade400,
+                            fontSize: 8,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       );
                     },
@@ -712,7 +1275,10 @@ class _DashboardPageState extends State<DashboardPage> {
                   belowBarData: BarAreaData(
                     show: true,
                     gradient: LinearGradient(
-                      colors: [color.withValues(alpha: 0.2), color.withValues(alpha: 0)],
+                      colors: [
+                        color.withValues(alpha: 0.2),
+                        color.withValues(alpha: 0),
+                      ],
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                     ),
@@ -736,65 +1302,118 @@ class _DashboardPageState extends State<DashboardPage> {
         color: const Color(0xff03AF55),
         padding: const EdgeInsets.all(24),
 
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(12)),
-                child: const Icon(Icons.psychology, color: Colors.white, size: 20),
-              ),
-              const SizedBox(width: 12),
-              const Text("LOGIKA FUZZY", style: TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 1)),
-              const Spacer(),
-              const Icon(Icons.chevron_right, color: Colors.white70),
-            ],
-          ),
-          const SizedBox(height: 20),
-          const Text("Status Kesehatan Nutrisi", style: TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.w500)),
-          const SizedBox(height: 4),
-          Text(
-            fuzzy.statusNutrisi.toUpperCase(),
-            style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w900, letterSpacing: -0.5),
-          ),
-          const SizedBox(height: 20),
-          Stack(
-            children: [
-              Container(height: 8, decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(10))),
-              AnimatedContainer(
-                duration: const Duration(seconds: 1),
-                height: 8,
-                width: MediaQuery.of(context).size.width * (fuzzy.outputPompa / 100).clamp(0.0, 1.0) * 0.7,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(colors: [Colors.white38, Colors.white]),
-                  borderRadius: BorderRadius.circular(10),
-                  boxShadow: [BoxShadow(color: Colors.white.withValues(alpha: 0.3), blurRadius: 4)],
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white24,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.psychology,
+                    color: Colors.white,
+                    size: 20,
+                  ),
                 ),
+                const SizedBox(width: 12),
+                const Text(
+                  "LOGIKA FUZZY",
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1,
+                  ),
+                ),
+                const Spacer(),
+                const Icon(Icons.chevron_right, color: Colors.white70),
+              ],
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              "Status Kesehatan Nutrisi",
+              style: TextStyle(
+                color: Colors.white70,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
               ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _fuzzyInfo(Icons.opacity, "pH ${fuzzy.statusPh}"),
-              _fuzzyInfo(Icons.bolt, "Output ${fuzzy.outputPompa.toStringAsFixed(1)}%"),
-            ],
-          ),
-        ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              fuzzy.statusNutrisi.toUpperCase(),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 26,
+                fontWeight: FontWeight.w900,
+                letterSpacing: -0.5,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Stack(
+              children: [
+                Container(
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: Colors.white10,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                AnimatedContainer(
+                  duration: const Duration(seconds: 1),
+                  height: 8,
+                  width:
+                      MediaQuery.of(context).size.width *
+                      (fuzzy.outputPompa / 100).clamp(0.0, 1.0) *
+                      0.7,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Colors.white38, Colors.white],
+                    ),
+                    borderRadius: BorderRadius.circular(10),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.white.withValues(alpha: 0.3),
+                        blurRadius: 4,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _fuzzyInfo(Icons.opacity, "pH ${fuzzy.statusPh}"),
+                _fuzzyInfo(
+                  Icons.bolt,
+                  "Output ${fuzzy.outputPompa.toStringAsFixed(1)}%",
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   Widget _fuzzyInfo(IconData icon, String text) {
     return Row(
       children: [
         Icon(icon, color: Colors.white60, size: 14),
         const SizedBox(width: 6),
-        Text(text, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)),
+        Text(
+          text,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
       ],
     );
   }
@@ -807,7 +1426,13 @@ class _PremiumSensorTile extends StatelessWidget {
   final IconData icon;
   final Color color;
 
-  const _PremiumSensorTile({required this.title, required this.value, required this.unit, required this.icon, required this.color});
+  const _PremiumSensorTile({
+    required this.title,
+    required this.value,
+    required this.unit,
+    required this.icon,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -822,28 +1447,56 @@ class _PremiumSensorTile extends StatelessWidget {
             children: [
               Container(
                 padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(color: color.withValues(alpha: 0.1), shape: BoxShape.circle),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
                 child: Icon(icon, size: 20, color: color),
               ),
-              if (value != "--") 
+              if (value != "--")
                 Container(
-                  width: 8, height: 8, 
-                  decoration: const BoxDecoration(color: Color(0xff03AF55), shape: BoxShape.circle),
+                  width: 8,
+                  height: 8,
+                  decoration: const BoxDecoration(
+                    color: Color(0xff03AF55),
+                    shape: BoxShape.circle,
+                  ),
                 ),
             ],
           ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: TextStyle(fontSize: 12, color: Colors.grey.shade600, fontWeight: FontWeight.w700)),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey.shade600,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
               const SizedBox(height: 4),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.baseline,
                 textBaseline: TextBaseline.alphabetic,
                 children: [
-                  Text(value, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, letterSpacing: -0.5)),
+                  Text(
+                    value,
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
                   const SizedBox(width: 4),
-                  Text(unit, style: TextStyle(fontSize: 12, color: Colors.grey.shade500, fontWeight: FontWeight.w800)),
+                  Text(
+                    unit,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey.shade500,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
                 ],
               ),
             ],
@@ -869,21 +1522,25 @@ class _PremiumCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: color ?? Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(28),
-        boxShadow: color != null ? [
-          BoxShadow(
-            color: color!.withValues(alpha: 0.3),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          )
-        ] : [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
+        boxShadow: color != null
+            ? [
+                BoxShadow(
+                  color: color!.withValues(alpha: 0.3),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                ),
+              ]
+            : [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                ),
+              ],
         border: Border.all(
-          color: color != null ? Colors.white.withValues(alpha: 0.2) : Colors.white.withValues(alpha: isDark ? 0.05 : 0.5),
+          color: color != null
+              ? Colors.white.withValues(alpha: 0.2)
+              : Colors.white.withValues(alpha: isDark ? 0.05 : 0.5),
           width: 1.5,
         ),
       ),

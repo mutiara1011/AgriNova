@@ -7,7 +7,6 @@ import 'bottom_nav.dart';
 import 'fuzzy/fuzzy_controller.dart';
 import 'notification/notification_controller.dart';
 import 'settings/theme_controller.dart';
-import 'onboarding/plant_selection_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -50,15 +49,7 @@ class MyApp extends StatelessWidget {
 
       home: Consumer<ThemeController>(
         builder: (context, themeController, _) {
-          return Consumer<PlantProvider>(
-            builder: (context, plant, _) {
-              if (plant.hasActivePlant) {
-                return const BottomNav();
-              } else {
-                return const PlantSelectionPage();
-              }
-            },
-          );
+          return const BottomNav();
         },
       ),
 

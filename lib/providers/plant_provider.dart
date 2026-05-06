@@ -1,94 +1,89 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../models/plant_cycle.dart';
-import '../models/sensor_data.dart';
+import '../services/api_service.dart';
 
 class PlantProvider extends ChangeNotifier {
-  static const String _activePlantKey = 'active_plant';
-  static const String _plantHistoryKey = 'plant_history';
+  final ApiService _apiService = ApiService();
 
   PlantCycle? _activePlant;
   List<PlantCycle> _historyCycles = [];
+  bool _isLoading = false;
 
   PlantCycle? get activePlant => _activePlant;
   List<PlantCycle> get historyCycles => _historyCycles;
   bool get hasActivePlant => _activePlant != null && _activePlant!.isActive;
+  bool get isLoading => _isLoading;
 
   Future<void> loadData() async {
-    final prefs = await SharedPreferences.getInstance();
-    
-    // Load Active Plant
-    final activeStr = prefs.getString(_activePlantKey);
-    if (activeStr != null) {
-      _activePlant = PlantCycle.fromJson(jsonDecode(activeStr));
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      // 1. Fetch Active Plant from API
+      final activeData = await _apiService.getActivePlantCycle();
+      if (activeData != null) {
+        _activePlant = PlantCycle.fromJson(activeData);
+      } else {
+        _activePlant = null;
+      }
+
+      // 2. Fetch History from API
+      final historyData = await _apiService.getPlantHistory();
+      _historyCycles = historyData.map((e) => PlantCycle.fromJson(e)).toList();
+    } catch (e) {
+      print('Error loadData in PlantProvider: $e');
     }
 
-    // Load History
-    final historyStr = prefs.getString(_plantHistoryKey);
-    if (historyStr != null) {
-      final List decoded = jsonDecode(historyStr);
-      _historyCycles = decoded.map((e) => PlantCycle.fromJson(e)).toList();
-    }
-    
+    _isLoading = false;
     notifyListeners();
   }
 
-  Future<void> startNewCycle({required String name, required DateTime startDate}) async {
-    double minPh = 5.5, maxPh = 6.5, minTds = 500, maxTds = 1000;
-    double idealPhMin = 5.8, idealPhMax = 6.2;
-    
-    if (name.toLowerCase().contains("kangkung")) {
-      minTds = 1000; maxTds = 1400;
-    } else if (name.toLowerCase().contains("pakcoy")) {
-      minTds = 1050; maxTds = 1400;
-    } else if (name.toLowerCase().contains("selada")) {
-      minTds = 560; maxTds = 840;
-    }
+  Future<bool> startNewCycle({
+    required String name, 
+    required DateTime startDate,
+    required double targetPhMin,
+    required double targetPhMax,
+    required double targetTdsVegetatifMin,
+    required double targetTdsVegetatifMax,
+    required double targetTdsPembesaranMin,
+    required double targetTdsPembesaranMax,
+  }) async {
+    _isLoading = true;
+    notifyListeners();
 
-    final newCycle = PlantCycle(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+    final success = await _apiService.startPlantCycle(
       name: name,
       startDate: startDate,
-      targetPhMin: idealPhMin,
-      targetPhMax: idealPhMax,
-      targetTdsMin: minTds,
-      targetTdsMax: maxTds,
+      targetPhMin: targetPhMin,
+      targetPhMax: targetPhMax,
+      targetTdsVegetatifMin: targetTdsVegetatifMin,
+      targetTdsVegetatifMax: targetTdsVegetatifMax,
+      targetTdsPembesaranMin: targetTdsPembesaranMin,
+      targetTdsPembesaranMax: targetTdsPembesaranMax,
     );
 
-    _activePlant = newCycle;
-    await _saveActivePlant();
+    if (success) {
+      await loadData(); // Reload to get the new active plant
+    }
+
+    _isLoading = false;
     notifyListeners();
+    return success;
   }
 
-  Future<void> endCycle(List<SensorData> currentHistoryData) async {
-    if (_activePlant == null) return;
-
-    final finishedCycle = _activePlant!.copyWith(
-      isActive: false,
-      endDate: DateTime.now(),
-      historyData: currentHistoryData,
-    );
-
-    _historyCycles.add(finishedCycle);
-    _activePlant = null;
-
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_activePlantKey);
-    
-    await _saveHistoryCycles();
+  Future<bool> endCycle({String notes = ""}) async {
+    _isLoading = true;
     notifyListeners();
-  }
 
-  Future<void> _saveActivePlant() async {
-    if (_activePlant == null) return;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_activePlantKey, jsonEncode(_activePlant!.toJson()));
-  }
+    final success = await _apiService.endPlantCycle(notes: notes);
 
-  Future<void> _saveHistoryCycles() async {
-    final prefs = await SharedPreferences.getInstance();
-    final list = _historyCycles.map((e) => e.toJson()).toList();
-    await prefs.setString(_plantHistoryKey, jsonEncode(list));
+    if (success) {
+      _activePlant = null;
+      await loadData(); // Reload history and status
+    }
+
+    _isLoading = false;
+    notifyListeners();
+    return success;
   }
 }

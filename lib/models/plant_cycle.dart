@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:agrinova/models/sensor_data.dart';
 
 class PlantCycle {
@@ -9,8 +8,10 @@ class PlantCycle {
   final bool isActive;
   final double targetPhMin;
   final double targetPhMax;
-  final double targetTdsMin;
-  final double targetTdsMax;
+  final double targetTdsVegetatifMin;
+  final double targetTdsVegetatifMax;
+  final double targetTdsPembesaranMin;
+  final double targetTdsPembesaranMax;
   final List<SensorData> historyData; // To store history when cycle ends
 
   PlantCycle({
@@ -21,8 +22,10 @@ class PlantCycle {
     this.isActive = true,
     required this.targetPhMin,
     required this.targetPhMax,
-    required this.targetTdsMin,
-    required this.targetTdsMax,
+    required this.targetTdsVegetatifMin,
+    required this.targetTdsVegetatifMax,
+    required this.targetTdsPembesaranMin,
+    required this.targetTdsPembesaranMax,
     this.historyData = const [],
   });
 
@@ -34,22 +37,26 @@ class PlantCycle {
         'isActive': isActive,
         'targetPhMin': targetPhMin,
         'targetPhMax': targetPhMax,
-        'targetTdsMin': targetTdsMin,
-        'targetTdsMax': targetTdsMax,
+        'targetTdsVegetatifMin': targetTdsVegetatifMin,
+        'targetTdsVegetatifMax': targetTdsVegetatifMax,
+        'targetTdsPembesaranMin': targetTdsPembesaranMin,
+        'targetTdsPembesaranMax': targetTdsPembesaranMax,
         'historyData': historyData.map((e) => e.toJson()).toList(),
       };
 
   factory PlantCycle.fromJson(Map<String, dynamic> json) {
     return PlantCycle(
-      id: json['id'],
+      id: json['id'] ?? json['_id'] ?? '',
       name: json['name'],
       startDate: DateTime.parse(json['startDate']),
       endDate: json['endDate'] != null ? DateTime.parse(json['endDate']) : null,
       isActive: json['isActive'],
       targetPhMin: json['targetPhMin']?.toDouble() ?? 5.5,
       targetPhMax: json['targetPhMax']?.toDouble() ?? 6.5,
-      targetTdsMin: json['targetTdsMin']?.toDouble() ?? 500,
-      targetTdsMax: json['targetTdsMax']?.toDouble() ?? 1000,
+      targetTdsVegetatifMin: json['targetTdsVegetatifMin']?.toDouble() ?? 500,
+      targetTdsVegetatifMax: json['targetTdsVegetatifMax']?.toDouble() ?? 800,
+      targetTdsPembesaranMin: json['targetTdsPembesaranMin']?.toDouble() ?? 800,
+      targetTdsPembesaranMax: json['targetTdsPembesaranMax']?.toDouble() ?? 1200,
       historyData: json['historyData'] != null ? (json['historyData'] as List).map((e) => SensorData.fromJson(e)).toList() : [],
     );
   }
@@ -62,8 +69,10 @@ class PlantCycle {
     bool? isActive,
     double? targetPhMin,
     double? targetPhMax,
-    double? targetTdsMin,
-    double? targetTdsMax,
+    double? targetTdsVegetatifMin,
+    double? targetTdsVegetatifMax,
+    double? targetTdsPembesaranMin,
+    double? targetTdsPembesaranMax,
     List<SensorData>? historyData,
   }) {
     return PlantCycle(
@@ -74,8 +83,10 @@ class PlantCycle {
       isActive: isActive ?? this.isActive,
       targetPhMin: targetPhMin ?? this.targetPhMin,
       targetPhMax: targetPhMax ?? this.targetPhMax,
-      targetTdsMin: targetTdsMin ?? this.targetTdsMin,
-      targetTdsMax: targetTdsMax ?? this.targetTdsMax,
+      targetTdsVegetatifMin: targetTdsVegetatifMin ?? this.targetTdsVegetatifMin,
+      targetTdsVegetatifMax: targetTdsVegetatifMax ?? this.targetTdsVegetatifMax,
+      targetTdsPembesaranMin: targetTdsPembesaranMin ?? this.targetTdsPembesaranMin,
+      targetTdsPembesaranMax: targetTdsPembesaranMax ?? this.targetTdsPembesaranMax,
       historyData: historyData ?? this.historyData,
     );
   }

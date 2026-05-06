@@ -3,10 +3,6 @@ import 'dashboard_page.dart';
 import 'control_page.dart';
 import 'fuzzy/fuzzy_page.dart';
 import 'settings/settings_page.dart';
-import 'notification/notification_controller.dart';
-import 'notification/notification_model.dart';
-import 'notification/notification_service.dart';
-import 'package:provider/provider.dart';
 
 class BottomNav extends StatefulWidget {
   const BottomNav({super.key});
@@ -33,8 +29,6 @@ class _BottomNavState extends State<BottomNav> {
 
   @override
   Widget build(BuildContext context) {
-    final notifController = context.watch<NotificationController>();
-
     return Scaffold(
       extendBody: true,
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
