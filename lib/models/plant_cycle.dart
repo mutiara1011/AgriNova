@@ -12,6 +12,7 @@ class PlantCycle {
   final double targetTdsVegetatifMax;
   final double targetTdsPembesaranMin;
   final double targetTdsPembesaranMax;
+  final int harvestDays;
   final List<SensorData> historyData; // To store history when cycle ends
 
   PlantCycle({
@@ -26,6 +27,7 @@ class PlantCycle {
     required this.targetTdsVegetatifMax,
     required this.targetTdsPembesaranMin,
     required this.targetTdsPembesaranMax,
+    this.harvestDays = 30,
     this.historyData = const [],
   });
 
@@ -41,6 +43,7 @@ class PlantCycle {
         'targetTdsVegetatifMax': targetTdsVegetatifMax,
         'targetTdsPembesaranMin': targetTdsPembesaranMin,
         'targetTdsPembesaranMax': targetTdsPembesaranMax,
+        'harvestDays': harvestDays,
         'historyData': historyData.map((e) => e.toJson()).toList(),
       };
 
@@ -57,6 +60,7 @@ class PlantCycle {
       targetTdsVegetatifMax: json['targetTdsVegetatifMax']?.toDouble() ?? 800,
       targetTdsPembesaranMin: json['targetTdsPembesaranMin']?.toDouble() ?? 800,
       targetTdsPembesaranMax: json['targetTdsPembesaranMax']?.toDouble() ?? 1200,
+      harvestDays: json['harvestDays'] ?? 30,
       historyData: json['historyData'] != null ? (json['historyData'] as List).map((e) => SensorData.fromJson(e)).toList() : [],
     );
   }

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'fuzzy/fuzzy_controller.dart';
 import 'providers/sensor_provider.dart';
 import 'providers/calibration_provider.dart';
+import 'providers/plant_provider.dart';
 import 'dart:async';
 import '../notification/notification_controller.dart';
 import '../notification/notification_widget.dart';
@@ -42,11 +43,12 @@ class _ControlPageState extends State<ControlPage> {
       // Fetch calibration data to keep toggles in sync with Web client
       context.read<CalibrationProvider>().fetchCalibrationData(showLoading: false);
       
-      final sensor = context.read<SensorProvider>().latestData;
-      if (sensor != null) {
+      final plant = context.read<PlantProvider>().activePlant;
+      if (plant != null) {
+        final phase = context.read<PlantProvider>().selectedPhase;
         setState(() {
-          tdsValue = sensor.tdsPPM;
-          suhuTarget = sensor.airTemp.toInt();
+          tdsValue = phase == "Vegetatif" ? plant.targetTdsVegetatifMax : plant.targetTdsPembesaranMax;
+          suhuTarget = 28; // Default target
         });
       }
     });
@@ -192,12 +194,21 @@ class _ControlPageState extends State<ControlPage> {
       child: Column(
         children: [
           _switchTile(
-            'Pompa Nutrisi',
-            pompa,
+            'Pompa Nutrisi (TDS)',
+            fuzzy.outputPompaTDS > 50 || (fuzzy.isManual && (fuzzy.pompaOverride ?? false)),
             (v) => context.read<FuzzyController>().setPompaManual(v),
             fuzzy.isAuto,
             fuzzy.pompaOverride != null,
             Icons.water_drop,
+          ),
+          const Divider(indent: 50, endIndent: 20),
+          _switchTile(
+            'Pompa Koreksi pH',
+            fuzzy.outputPompaPH > 50 || (fuzzy.isManual && (fuzzy.pompaOverride ?? false)),
+            (v) => context.read<FuzzyController>().setPompaManual(v),
+            fuzzy.isAuto,
+            fuzzy.pompaOverride != null,
+            Icons.science_outlined,
           ),
           const Divider(indent: 50, endIndent: 20),
           _switchTile(
@@ -267,10 +278,16 @@ class _ControlPageState extends State<ControlPage> {
   }
 
   Widget _pompaCard(FuzzyController fuzzy) {
+    final plant = context.watch<PlantProvider>().activePlant;
+    final phase = context.watch<PlantProvider>().selectedPhase;
+    
+    double minTds = plant != null ? (phase == "Vegetatif" ? plant.targetTdsVegetatifMin : plant.targetTdsPembesaranMin) : 500;
+    double maxTds = plant != null ? (phase == "Vegetatif" ? plant.targetTdsVegetatifMax : plant.targetTdsPembesaranMax) : 1200;
+
     return _PremiumCard(
       child: Column(
         children: [
-          _autoHeader('Target TDS (Nutrisi)', autoPompa, (v) => setState(() => autoPompa = v), fuzzy.isAuto),
+          _autoHeader('Target TDS (${phase.toUpperCase()})', autoPompa, (v) => setState(() => autoPompa = v), fuzzy.isAuto),
           const SizedBox(height: 12),
           SliderTheme(
             data: SliderTheme.of(context).copyWith(
@@ -280,21 +297,21 @@ class _ControlPageState extends State<ControlPage> {
               overlayColor: const Color(0xff03AF55).withValues(alpha: 0.2),
             ),
             child: Slider(
-              value: tdsValue.clamp(500, 1200),
-              min: 500, max: 1200,
+              value: tdsValue.clamp(minTds, maxTds),
+              min: minTds, max: maxTds,
               onChanged: (autoPompa || fuzzy.isAuto) ? null : (v) => setState(() => tdsValue = v),
             ),
           ),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('500 PPM', style: TextStyle(fontSize: 10, color: Colors.grey.shade500, fontWeight: FontWeight.bold)),
+              Text('${minTds.toInt()} PPM', style: TextStyle(fontSize: 10, color: Colors.grey.shade500, fontWeight: FontWeight.bold)),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 decoration: BoxDecoration(color: const Color(0xff03AF55).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
                 child: Text('${tdsValue.toInt()} PPM', style: const TextStyle(color: Color(0xff03AF55), fontWeight: FontWeight.w900)),
               ),
-              Text('1200 PPM', style: TextStyle(fontSize: 10, color: Colors.grey.shade500, fontWeight: FontWeight.bold)),
+              Text('${maxTds.toInt()} PPM', style: TextStyle(fontSize: 10, color: Colors.grey.shade500, fontWeight: FontWeight.bold)),
             ],
           ),
         ],

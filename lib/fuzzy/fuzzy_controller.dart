@@ -2,8 +2,10 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:agrinova/providers/sensor_provider.dart';
+import 'package:agrinova/providers/plant_provider.dart';
 import 'package:agrinova/notification/notification_controller.dart';
 import 'package:agrinova/notification/notification_model.dart';
+import 'package:agrinova/models/fuzzy_thresholds.dart';
 import 'dart:async';
 
 enum SystemMode { auto, semiAuto, manual }
@@ -11,29 +13,34 @@ enum SystemMode { auto, semiAuto, manual }
 class FuzzyController extends ChangeNotifier {
   NotificationController notificationController;
   SensorProvider sensorProvider;
+  PlantProvider plantProvider;
   static const String _fuzzyLogKey = 'fuzzy_log';
 
-  FuzzyController(this.notificationController, this.sensorProvider) {
+  FuzzyController(this.notificationController, this.sensorProvider, this.plantProvider) {
     _loadFuzzyLog();
     startTimer();
   }
 
   Future<void> _loadFuzzyLog() async {
-    final prefs = await SharedPreferences.getInstance();
-    final logStr = prefs.getString(_fuzzyLogKey);
-    if (logStr != null) {
-      final List decoded = jsonDecode(logStr);
-      logRekomendasi = decoded.map((e) {
-        return {
-          "title": e["title"],
-          "desc": e["desc"],
-          "time": DateTime.parse(e["time"]),
-        };
-      }).toList();
-      if (logRekomendasi.isNotEmpty) {
-        lastRekomendasi = logRekomendasi.first["title"];
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final logStr = prefs.getString(_fuzzyLogKey);
+      if (logStr != null) {
+        final List decoded = jsonDecode(logStr);
+        logRekomendasi = decoded.map((e) {
+          return {
+            "title": e["title"],
+            "desc": e["desc"],
+            "time": DateTime.parse(e["time"]),
+          };
+        }).toList();
+        if (logRekomendasi.isNotEmpty) {
+          lastRekomendasi = logRekomendasi.first["title"];
+        }
+        notifyListeners();
       }
-      notifyListeners();
+    } catch (e) {
+      debugPrint("Error loading fuzzy log: $e");
     }
   }
 
@@ -108,7 +115,11 @@ class FuzzyController extends ChangeNotifier {
   double r3 = 0;
 
   // OUTPUT CRISP
-  double outputPompa = 0;
+  double outputPompaTDS = 0;
+  double outputPompaPH = 0;
+  
+  // Legacy support for UI
+  double get outputPompa => outputPompaTDS > outputPompaPH ? outputPompaTDS : outputPompaPH;
 
   double _min(double a, double b) => a < b ? a : b;
 
@@ -172,29 +183,33 @@ class FuzzyController extends ChangeNotifier {
       airKritisSent = false;
     }
 
-    if ((ph < 5.5 || ph > 6.5) && !phWarningSent) {
+    final thresholds = plantProvider.currentThresholds;
+    final phL = thresholds.phLimits;
+    final tdsL = thresholds.tdsLimits;
+
+    if ((ph < phL[0] || ph > phL[3]) && !phWarningSent) {
       notificationController.addNotification(
         "pH Tidak Normal",
-        "Nilai pH di luar batas aman (5.5 - 6.5)",
+        "Nilai pH di luar batas aman (${phL[0]} - ${phL[3]})",
         NotificationType.warning,
       );
       phWarningSent = true;
     }
 
-    if (ph >= 5.5 && ph <= 6.5) {
+    if (ph >= phL[0] && ph <= phL[3]) {
       phWarningSent = false;
     }
 
-    if ((tds < 700 || tds > 900) && !tdsWarningSent) {
+    if ((tds < tdsL[0] || tds > tdsL[1] * 1.2) && !tdsWarningSent) {
       notificationController.addNotification(
         "Nutrisi Tidak Ideal",
-        "TDS di luar range optimal (700-900)",
+        "TDS di luar range optimal (${tdsL[0]} - ${tdsL[1]})",
         NotificationType.warning,
       );
       tdsWarningSent = true;
     }
 
-    if (tds >= 700 && tds <= 900) {
+    if (tds >= tdsL[0] && tds <= tdsL[1] * 1.2) {
       tdsWarningSent = false;
     }
 
@@ -230,35 +245,39 @@ class FuzzyController extends ChangeNotifier {
   void evaluateFuzzy() {
     if (isManual) return;
 
+    final thresholds = plantProvider.currentThresholds;
+    final phL = thresholds.phLimits; // [a, b, c, d]
+    final tdsL = thresholds.tdsLimits; // [low, high]
+
     // =====================
     // 1. FUZZIFIKASI pH
     // =====================
 
-    // pH Rendah
-    if (ph <= 5.5) {
+    // pH Asam (Kurva Turun)
+    if (ph <= phL[0]) {
       muPhRendah = 1;
-    } else if (ph > 5.5 && ph < 5.8) {
-      muPhRendah = (5.8 - ph) / 0.3;
+    } else if (ph > phL[0] && ph < phL[1]) {
+      muPhRendah = (phL[1] - ph) / (phL[1] - phL[0]);
     } else {
       muPhRendah = 0;
     }
 
-    // pH Normal
-    if (ph >= 5.8 && ph <= 6.2) {
+    // pH Normal (Trapesium)
+    if (ph >= phL[1] && ph <= phL[2]) {
       muPhNormal = 1;
-    } else if (ph > 5.5 && ph < 5.8) {
-      muPhNormal = (ph - 5.5) / 0.3;
-    } else if (ph > 6.2 && ph < 6.5) {
-      muPhNormal = (6.5 - ph) / 0.3;
+    } else if (ph > phL[0] && ph < phL[1]) {
+      muPhNormal = (ph - phL[0]) / (phL[1] - phL[0]);
+    } else if (ph > phL[2] && ph < phL[3]) {
+      muPhNormal = (phL[3] - ph) / (phL[3] - phL[2]);
     } else {
       muPhNormal = 0;
     }
 
-    // pH Tinggi
-    if (ph >= 6.5) {
+    // pH Basa (Kurva Naik)
+    if (ph >= phL[3]) {
       muPhTinggi = 1;
-    } else if (ph > 6.2 && ph < 6.5) {
-      muPhTinggi = (ph - 6.2) / 0.3;
+    } else if (ph > phL[2] && ph < phL[3]) {
+      muPhTinggi = (ph - phL[2]) / (phL[3] - phL[2]);
     } else {
       muPhTinggi = 0;
     }
@@ -267,58 +286,68 @@ class FuzzyController extends ChangeNotifier {
     // 2. FUZZIFIKASI TDS
     // =====================
 
-    if (tds <= 700) {
+    // TDS Rendah (Bahu Kiri)
+    if (tds <= tdsL[0]) {
       muTdsRendah = 1;
-      muTdsTinggi = 0;
-    } else if (tds > 700 && tds < 900) {
-      muTdsRendah = (900 - tds) / 200;
-      muTdsTinggi = (tds - 700) / 200;
+    } else if (tds > tdsL[0] && tds < tdsL[1]) {
+      muTdsRendah = (tdsL[1] - tds) / (tdsL[1] - tdsL[0]);
     } else {
       muTdsRendah = 0;
+    }
+
+    // TDS Tinggi (Bahu Kanan)
+    if (tds >= tdsL[1]) {
       muTdsTinggi = 1;
+    } else if (tds > tdsL[0] && tds < tdsL[1]) {
+      muTdsTinggi = (tds - tdsL[0]) / (tdsL[1] - tdsL[0]);
+    } else {
+      muTdsTinggi = 0;
     }
 
     // =====================
     // 3. INFERENSI (MAMDANI)
     // =====================
 
-    // R1: IF pH Normal AND TDS Tinggi → Pompa Sedang
-    r1 = _min(muPhNormal, muTdsTinggi);
+    // R1: IF pH Normal AND TDS Rendah → Pompa TDS Tinggi (80%), Pompa pH Mati (0%)
+    r1 = _min(muPhNormal, muTdsRendah);
 
-    // R2: IF pH Rendah AND TDS Rendah → Pompa Tinggi
+    // R2: IF pH Asam AND TDS Rendah → Pompa TDS Mati (0%), Pompa pH (Up) Tinggi (80%)
     r2 = _min(muPhRendah, muTdsRendah);
 
-    // R3: IF pH Tinggi AND TDS Tinggi → Pompa Rendah
+    // R3: IF pH Basa AND TDS Tinggi → Pompa TDS Mati (0%), Pompa pH (Down) Tinggi (80%)
     r3 = _min(muPhTinggi, muTdsTinggi);
 
     // =====================
-    // 4. DEFUZZIFIKASI
+    // 4. DEFUZZIFIKASI (Weighted Average)
     // =====================
-
-    // Nilai output (contoh)
-    double z1 = 50; // sedang
-    double z2 = 80; // tinggi
-
-    double z3 = 20; // rendah
 
     double totalFire = r1 + r2 + r3;
 
     if (totalFire != 0) {
-      outputPompa = ((r1 * z1) + (r2 * z2) + (r3 * z3)) / totalFire;
+      // outputPompaTDS: R1=80, R2=0, R3=0
+      outputPompaTDS = (r1 * 80 + r2 * 0 + r3 * 0) / totalFire;
+      
+      // outputPompaPH: R1=0, R2=80, R3=80
+      outputPompaPH = (r1 * 0 + r2 * 80 + r3 * 80) / totalFire;
+    } else {
+      outputPompaTDS = 0;
+      outputPompaPH = 0;
     }
 
     // =====================
     // 5. KEPUTUSAN AKHIR
     // =====================
 
-    pompaAktif = outputPompa > 40;
+    pompaAktif = outputPompaTDS > 40 || outputPompaPH > 40;
 
-    if (outputPompa > 70) {
-      rekomendasi = "Pompa nutrisi tinggi";
-    } else if (outputPompa > 40) {
-      rekomendasi = "Pompa nutrisi sedang";
+    if (outputPompaTDS > 50 && outputPompaPH > 50) {
+      rekomendasi = "Pompa Nutrisi & pH Aktif";
+    } else if (outputPompaTDS > 50) {
+      rekomendasi = "Pompa Nutrisi Aktif";
+    } else if (outputPompaPH > 50) {
+      rekomendasi = "Pompa pH Aktif";
     } else {
-      rekomendasi = "Tidak perlu pompa";
+      rekomendasi = "Kondisi Optimal";
     }
 
     // ================= LOG REKOMENDASI =================

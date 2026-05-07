@@ -70,10 +70,6 @@ class _SettingsPageState extends State<SettingsPage> {
             const SizedBox(height: 16),
             _intervalFuzzyCard(),
             const SizedBox(height: 24),
-            _sectionTitle("Standardisasi & Keamanan"),
-            const SizedBox(height: 12),
-            _safetyLimitCard(),
-            const SizedBox(height: 24),
             _sectionTitle("Informasi Budidaya"),
             const SizedBox(height: 12),
             _plantSettingCard(),
@@ -215,21 +211,6 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  // ================= SAFETY =================
-  Widget _safetyLimitCard() {
-    return _PremiumCard(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Column(
-        children: [
-          _listItem('Ambang pH Minimum', '5.5 pH', Icons.arrow_downward_rounded),
-          const Divider(indent: 50, endIndent: 20),
-          _listItem('Ambang pH Maksimum', '6.5 pH', Icons.arrow_upward_rounded),
-          const Divider(indent: 50, endIndent: 20),
-          _listItem('Batas Aman TDS', '1200 PPM', Icons.security_rounded),
-        ],
-      ),
-    );
-  }
 
   // ================= TANAMAN =================
   Widget _plantSettingCard() {

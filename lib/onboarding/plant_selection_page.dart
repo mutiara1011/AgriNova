@@ -538,6 +538,7 @@ class _PlantSelectionPageState extends State<PlantSelectionPage> {
                       targetTdsVegetatifMax: plantToStart.tdsVegetatifMax,
                       targetTdsPembesaranMin: plantToStart.tdsPembesaranMin,
                       targetTdsPembesaranMax: plantToStart.tdsPembesaranMax,
+                      harvestDays: plantToStart.harvestDays,
                     );
                     
                 if (context.mounted) {

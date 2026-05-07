@@ -23,12 +23,19 @@ void main() async {
         ChangeNotifierProvider(create: (_) => SensorProvider()),
         ChangeNotifierProvider(create: (_) => CalibrationProvider()..fetchCalibrationData()),
 
-        ChangeNotifierProxyProvider2<NotificationController, SensorProvider, FuzzyController>(
-          create: (context) =>
-              FuzzyController(context.read<NotificationController>(), context.read<SensorProvider>()),
-          update: (context, notif, sensor, previous) {
-            previous!.notificationController = notif;
+        ChangeNotifierProxyProvider3<NotificationController, SensorProvider, PlantProvider, FuzzyController>(
+          create: (context) => FuzzyController(
+            context.read<NotificationController>(),
+            context.read<SensorProvider>(),
+            context.read<PlantProvider>(),
+          ),
+          update: (context, notif, sensor, plant, previous) {
+            if (previous == null) {
+              return FuzzyController(notif, sensor, plant);
+            }
+            previous.notificationController = notif;
             previous.sensorProvider = sensor;
+            previous.plantProvider = plant;
             return previous;
           },
         ),

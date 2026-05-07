@@ -4,6 +4,8 @@ import 'fuzzy_controller.dart';
 import 'fuzzy_history_page.dart';
 import 'fuzzy_info_page.dart';
 import 'package:agrinova/providers/sensor_provider.dart';
+import 'package:agrinova/providers/plant_provider.dart';
+import 'package:agrinova/models/fuzzy_thresholds.dart';
 
 class FuzzyPage extends StatefulWidget {
   const FuzzyPage({super.key});
@@ -40,6 +42,10 @@ class _FuzzyPageState extends State<FuzzyPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              _sectionTitle("Tanaman Aktif"),
+              const SizedBox(height: 12),
+              const _ActivePlantInfoCard(),
+              const SizedBox(height: 24),
               _sectionTitle("Overview Fuzzy"),
               const SizedBox(height: 12),
               const _FuzzyStatusCard(),
@@ -126,22 +132,73 @@ class _FuzzyStatusCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               _Gauge(
-                label: 'pH Air',
-                value: fuzzy.ph.toStringAsFixed(1),
-                status: fuzzy.statusPh,
+                label: 'Pompa TDS',
+                value: "${fuzzy.outputPompaTDS.toStringAsFixed(0)}%",
+                status: fuzzy.outputPompaTDS > 50 ? "Aktif" : "Mati",
                 color: Colors.teal,
               ),
               Container(width: 1, height: 40, color: Colors.grey.withValues(alpha: 0.2)),
               _Gauge(
-                label: 'Nutrisi TDS',
-                value: fuzzy.tds.toStringAsFixed(0),
-                status: fuzzy.muTdsTinggi > fuzzy.muTdsRendah ? "Tinggi" : "Rendah",
+                label: 'Pompa pH',
+                value: "${fuzzy.outputPompaPH.toStringAsFixed(0)}%",
+                status: fuzzy.outputPompaPH > 50 ? "Aktif" : "Mati",
                 color: Colors.deepPurple,
               ),
             ],
           ),
         ],
       ),
+    );
+  }
+}
+
+class _ActivePlantInfoCard extends StatelessWidget {
+  const _ActivePlantInfoCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final plantProvider = context.watch<PlantProvider>();
+    final activePlant = plantProvider.activePlant;
+
+    if (activePlant == null) {
+      return _PremiumCard(
+        child: const Center(
+          child: Text(
+            "Tidak ada tanaman aktif",
+            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey),
+          ),
+        ),
+      );
+    }
+
+    return _PremiumCard(
+      child: Column(
+        children: [
+          _infoRow("Komoditas", plantProvider.selectedPlant, Icons.eco),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 12),
+            child: Divider(height: 1),
+          ),
+          _infoRow("Fase Pertumbuhan", plantProvider.selectedPhase, Icons.timeline),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 12),
+            child: Divider(height: 1),
+          ),
+          _infoRow("Umur Tanaman", "${activePlant.hst} HSPT", Icons.calendar_today),
+        ],
+      ),
+    );
+  }
+
+  Widget _infoRow(String label, String value, IconData icon) {
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: const Color(0xff03AF55)),
+        const SizedBox(width: 12),
+        Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.grey)),
+        const Spacer(),
+        Text(value, style: const TextStyle(fontWeight: FontWeight.w900, color: Color(0xff03AF55), fontSize: 13)),
+      ],
     );
   }
 }
@@ -276,7 +333,16 @@ class _MembershipCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 30),
-          SizedBox(height: 100, width: double.infinity, child: CustomPaint(painter: _MembershipPainter(ph))),
+          SizedBox(
+            height: 100, 
+            width: double.infinity, 
+            child: CustomPaint(
+              painter: _MembershipPainter(
+                ph: ph,
+                thresholds: context.watch<PlantProvider>().currentThresholds,
+              ),
+            ),
+          ),
           const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -363,8 +429,8 @@ class _RuleCard extends StatelessWidget {
                 _chip('NORMAL', Colors.green),
                 const Text('AND TDS', style: TextStyle(fontSize: 12)),
                 _chip('RENDAH', Colors.green),
-                const Text('THEN POMPA', style: TextStyle(fontSize: 12)),
-                _chip('SEDANG', Colors.grey),
+                const Text('THEN POMPA TDS', style: TextStyle(fontSize: 12)),
+                _chip('TINGGI', Colors.grey),
               ],
             ),
             fireValue: fuzzy.r1.toStringAsFixed(2),
@@ -374,7 +440,7 @@ class _RuleCard extends StatelessWidget {
             context: context,
             label: 'R2',
             isActive: fuzzy.r2 > 0,
-            content: const Text('IF pH RENDAH AND TDS RENDAH THEN POMPA TINGGI', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+            content: const Text('IF pH ASAM AND TDS RENDAH THEN POMPA PH (UP) TINGGI', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
             fireValue: fuzzy.r2.toStringAsFixed(2),
           ),
           const SizedBox(height: 12),
@@ -382,7 +448,7 @@ class _RuleCard extends StatelessWidget {
             context: context,
             label: 'R3',
             isActive: fuzzy.r3Active,
-            content: const Text('IF pH TINGGI AND TDS TINGGI THEN POMPA RENDAH', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+            content: const Text('IF pH BASA AND TDS TINGGI THEN POMPA PH (DOWN) TINGGI', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
             fireValue: fuzzy.r3.toStringAsFixed(2),
           ),
         ],
@@ -507,22 +573,50 @@ class _HistoryCard extends StatelessWidget {
 
 class _MembershipPainter extends CustomPainter {
   final double ph;
-  _MembershipPainter(this.ph);
+  final FuzzyThresholds thresholds;
+  
+  _MembershipPainter({required this.ph, required this.thresholds});
+
   @override
   void paint(Canvas canvas, Size size) {
     final paintLine = Paint()..strokeWidth = 2..style = PaintingStyle.stroke;
     final paintFill = Paint()..style = PaintingStyle.fill;
 
-    // Drawing Shapes for Low, Mid, High
-    void drawTriangle(Color color, List<Offset> points) {
+    final phL = thresholds.phLimits;
+    
+    // Scale pH (assume 0-14 range for visualization)
+    double toX(double val) => (val / 14) * size.width;
+
+    // Drawing Shapes for Asam, Normal, Basa
+    void drawShape(Color color, List<Offset> points) {
       final path = Path()..addPolygon(points, true);
       canvas.drawPath(path, paintFill..color = color.withValues(alpha: 0.1));
       canvas.drawPath(path, paintLine..color = color.withValues(alpha: 0.3));
     }
 
-    drawTriangle(Colors.red, [Offset(0, size.height), Offset(size.width * 0.3, size.height), Offset(0, 0)]);
-    drawTriangle(Colors.green, [Offset(size.width * 0.2, size.height), Offset(size.width * 0.5, 0), Offset(size.width * 0.8, size.height)]);
-    drawTriangle(Colors.blue, [Offset(size.width * 0.7, size.height), Offset(size.width, size.height), Offset(size.width, 0)]);
+    // pH Asam (Kurva Turun)
+    drawShape(Colors.red, [
+      Offset(toX(0), 0),
+      Offset(toX(phL[0]), 0),
+      Offset(toX(phL[1]), size.height),
+      Offset(toX(0), size.height),
+    ]);
+
+    // pH Normal (Trapesium)
+    drawShape(Colors.green, [
+      Offset(toX(phL[0]), size.height),
+      Offset(toX(phL[1]), 0),
+      Offset(toX(phL[2]), 0),
+      Offset(toX(phL[3]), size.height),
+    ]);
+
+    // pH Basa (Kurva Naik)
+    drawShape(Colors.blue, [
+      Offset(toX(phL[2]), size.height),
+      Offset(toX(phL[3]), 0),
+      Offset(toX(14), 0),
+      Offset(toX(14), size.height),
+    ]);
 
     // Indicator
     double x = (ph / 14).clamp(0.0, 1.0) * size.width;

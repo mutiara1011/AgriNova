@@ -171,6 +171,7 @@ class ApiService {
     required double targetTdsVegetatifMax,
     required double targetTdsPembesaranMin,
     required double targetTdsPembesaranMax,
+    required int harvestDays,
   }) async {
     try {
       final response = await http.post(
@@ -186,6 +187,7 @@ class ApiService {
           "targetTdsVegetatifMax": targetTdsVegetatifMax,
           "targetTdsPembesaranMin": targetTdsPembesaranMin,
           "targetTdsPembesaranMax": targetTdsPembesaranMax,
+          "harvestDays": harvestDays,
         }),
       ).timeout(const Duration(seconds: 10));
       return response.statusCode == 201 || response.statusCode == 200;

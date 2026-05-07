@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../models/fuzzy_thresholds.dart';
 import '../models/plant_cycle.dart';
 import '../services/api_service.dart';
 
@@ -13,6 +14,19 @@ class PlantProvider extends ChangeNotifier {
   List<PlantCycle> get historyCycles => _historyCycles;
   bool get hasActivePlant => _activePlant != null && _activePlant!.isActive;
   bool get isLoading => _isLoading;
+
+  String get selectedPlant {
+    if (_activePlant == null) return "Selada Keriting";
+    return _activePlant!.name;
+  }
+
+  String get selectedPhase {
+    if (_activePlant == null) return "Vegetatif";
+    int hst = _activePlant!.hst;
+    // Dynamic transition: phase changes at 60% of total harvest duration
+    int transitionDay = (_activePlant!.harvestDays * 0.6).round();
+    return hst <= transitionDay ? "Vegetatif" : "Pembesaran";
+  }
 
   Future<void> loadData() async {
     _isLoading = true;
@@ -47,6 +61,7 @@ class PlantProvider extends ChangeNotifier {
     required double targetTdsVegetatifMax,
     required double targetTdsPembesaranMin,
     required double targetTdsPembesaranMax,
+    required int harvestDays,
   }) async {
     _isLoading = true;
     notifyListeners();
@@ -60,6 +75,7 @@ class PlantProvider extends ChangeNotifier {
       targetTdsVegetatifMax: targetTdsVegetatifMax,
       targetTdsPembesaranMin: targetTdsPembesaranMin,
       targetTdsPembesaranMax: targetTdsPembesaranMax,
+      harvestDays: harvestDays,
     );
 
     if (success) {
@@ -85,5 +101,48 @@ class PlantProvider extends ChangeNotifier {
     _isLoading = false;
     notifyListeners();
     return success;
+  }
+
+  // --- FUZZY CONFIGURATION (Sync with Dashboard/Settings) ---
+  FuzzyThresholds get currentThresholds {
+    if (_activePlant == null) {
+      // Default fallback if no active plant
+      return FuzzyThresholds(
+        phLimits: [5.5, 6.0, 7.0, 7.5],
+        tdsLimits: [560, 700],
+      );
+    }
+
+    // Dynamic thresholds derived from active plant cycle targets
+    final p = _activePlant!;
+    
+    // pH: [AsamEnd, NormalStart, NormalEnd, BasaStart]
+    // We use a 0.5 offset from the target range to create the trapezoid slopes
+    double phMin = p.targetPhMin;
+    double phMax = p.targetPhMax;
+    List<double> phLimits = [phMin - 0.5, phMin, phMax, phMax + 0.5];
+
+    // TDS: [RendahEnd, TinggiStart]
+    // We use the target min and max to define the crossover region
+    double tdsMin, tdsMax;
+    if (selectedPhase == "Vegetatif") {
+      tdsMin = p.targetTdsVegetatifMin;
+      tdsMax = p.targetTdsVegetatifMax;
+    } else {
+      tdsMin = p.targetTdsPembesaranMin;
+      tdsMax = p.targetTdsPembesaranMax;
+    }
+    
+    // Adjusting to match the logic where 'Tinggi' starts at the ideal/upper bound
+    // If the gap is too small, we use a default ratio
+    if ((tdsMax - tdsMin) < 50) {
+      tdsMin = tdsMax * 0.8;
+    }
+    List<double> tdsLimits = [tdsMin, tdsMax];
+
+    return FuzzyThresholds(
+      phLimits: phLimits,
+      tdsLimits: tdsLimits,
+    );
   }
 }

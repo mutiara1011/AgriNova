@@ -640,21 +640,7 @@ class _DashboardPageState extends State<DashboardPage> {
     final name = plant.name;
 
     String getPhase() {
-      final days = int.tryParse(hst) ?? 0;
-      if (name.toLowerCase().contains("kangkung")) {
-        if (days <= 14) return "VEGETATIF";
-        if (days < 21) return "PEMBESARAN";
-        return "SIAP PANEN";
-      } else if (name.toLowerCase().contains("pakcoy")) {
-        if (days <= 20) return "VEGETATIF";
-        if (days < 35) return "PEMBESARAN";
-        return "SIAP PANEN";
-      } else if (name.toLowerCase().contains("selada")) {
-        if (days <= 18) return "VEGETATIF";
-        if (days < 30) return "PEMBESARAN";
-        return "SIAP PANEN";
-      }
-      return days < 15 ? "VEGETATIF" : "PEMBESARAN";
+      return context.read<PlantProvider>().selectedPhase.toUpperCase();
     }
 
     return _PremiumCard(
@@ -1055,6 +1041,7 @@ class _DashboardPageState extends State<DashboardPage> {
       ],
     );
   }
+
 
   Widget _chartSlider(BuildContext context, SensorProvider sensor) {
     final data = sensor.latestData;
