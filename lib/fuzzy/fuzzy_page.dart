@@ -589,7 +589,7 @@ class _ConditionCard extends StatelessWidget {
             children: [
               _dosingDetail("Ukuran Bak", "1.0 x 1.0 m"),
               _dosingDetail(
-                "Tinggi Air",
+                "Ketinggian Air",
                 "${fuzzy.ketinggianAir.toStringAsFixed(1)} cm",
               ),
               _dosingDetail(

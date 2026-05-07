@@ -31,8 +31,8 @@ final List<SensorType> sensorTypes = [
   SensorType(id: "airHumidity", label: "Kelembapan Udara", category: "UDARA", icon: Icons.water_drop, unit: "%", color: const Color(0xff3b82f6)),
   SensorType(id: "waterTemp", label: "Suhu Air", category: "RESERVOIR", icon: Icons.thermostat, unit: "°C", color: const Color(0xff06b6d4)),
   SensorType(id: "lightLux", label: "Intensitas Cahaya", category: "FOTOSINTESIS", icon: Icons.light_mode, unit: "Lux", color: const Color(0xffeab308)),
-  SensorType(id: "tdsPPM", label: "TDS (Nutrisi Air)", category: "NUTRISI", icon: Icons.speed, unit: "PPM", color: const Color(0xff8b5cf6)),
-  SensorType(id: "phValue", label: "pH (Keasaman Air)", category: "KEASAMAN", icon: Icons.science, unit: "", color: const Color(0xff14b8a6)),
+  SensorType(id: "tdsPPM", label: "Nutrisi (TDS)", category: "NUTRISI", icon: Icons.speed, unit: "PPM", color: const Color(0xff8b5cf6)),
+  SensorType(id: "phValue", label: "pH Air", category: "KEASAMAN", icon: Icons.science, unit: "", color: const Color(0xff14b8a6)),
 ];
 
 class DetailChartPage extends StatefulWidget {

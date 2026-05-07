@@ -1018,7 +1018,7 @@ class _DashboardPageState extends State<DashboardPage> {
       childAspectRatio: isSmall ? 1.8 : 1.4,
       children: [
         _PremiumSensorTile(
-          title: 'Level Air',
+          title: 'Ketinggian Air',
           value: '12.0',
           unit: 'cm',
           icon: Icons.water_drop,
@@ -1046,14 +1046,14 @@ class _DashboardPageState extends State<DashboardPage> {
           color: Colors.cyan,
         ),
         _PremiumSensorTile(
-          title: 'Cahaya',
+          title: 'Intensitas Cahaya',
           value: data?.lightLux.toStringAsFixed(0) ?? '--',
           unit: 'Lx',
           icon: Icons.wb_sunny_outlined,
           color: Colors.amber,
         ),
         _PremiumSensorTile(
-          title: 'Nutrisi/TDS',
+          title: 'Nutrisi (TDS)',
           value: data?.tdsPPM.toStringAsFixed(0) ?? '--',
           unit: 'PPM',
           icon: Icons.science_outlined,
@@ -1084,7 +1084,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
     final charts = [
       _chartItem(
-        "Level Air",
+        "Ketinggian Air",
         "12.0 cm",
         const Color(0xff0ea5e9),
         history,
@@ -1112,14 +1112,14 @@ class _DashboardPageState extends State<DashboardPage> {
         (d) => d.waterTemp,
       ),
       _chartItem(
-        "Cahaya",
+        "Intensitas Cahaya",
         "${data?.lightLux.toStringAsFixed(0) ?? '--'} Lux",
         const Color(0xffeab308),
         history,
         (d) => d.lightLux,
       ),
       _chartItem(
-        "Nutrisi",
+        "Nutrisi (TDS)",
         "${data?.tdsPPM.toStringAsFixed(0) ?? '--'} PPM",
         const Color(0xff8b5cf6),
         history,
