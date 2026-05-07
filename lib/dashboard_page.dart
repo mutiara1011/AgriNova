@@ -974,6 +974,40 @@ class _DashboardPageState extends State<DashboardPage> {
     final width = MediaQuery.of(context).size.width;
     final isSmall = width < 380;
 
+    String weatherValue = '--';
+    IconData weatherIcon = Icons.nights_stay;
+    Color weatherColor = Colors.indigo;
+
+    if (data != null) {
+      final hour = DateTime.now().hour;
+      final isDaylight = hour >= 6 && hour < 18;
+
+      if (isDaylight) {
+        final lux = data.lightLux;
+        if (lux >= 40000) {
+          weatherValue = 'Sangat Terik';
+          weatherIcon = Icons.wb_sunny;
+          weatherColor = Colors.orange;
+        } else if (lux >= 15000) {
+          weatherValue = 'Cerah';
+          weatherIcon = Icons.sunny;
+          weatherColor = Colors.amber;
+        } else if (lux >= 2000) {
+          weatherValue = 'Berawan';
+          weatherIcon = Icons.cloud;
+          weatherColor = Colors.blueGrey;
+        } else {
+          weatherValue = 'Mendung';
+          weatherIcon = Icons.thunderstorm_rounded;
+          weatherColor = Colors.grey;
+        }
+      } else {
+        weatherValue = 'Malam';
+        weatherIcon = Icons.nights_stay;
+        weatherColor = Colors.indigoAccent;
+      }
+    }
+
     return GridView.count(
       crossAxisCount: isSmall ? 1 : 2,
       shrinkWrap: true,
@@ -1034,10 +1068,10 @@ class _DashboardPageState extends State<DashboardPage> {
         ),
         _PremiumSensorTile(
           title: 'Cuaca',
-          value: 'Cerah',
+          value: weatherValue,
           unit: '',
-          icon: Icons.sunny,
-          color: Colors.orangeAccent,
+          icon: weatherIcon,
+          color: weatherColor,
         ),
       ],
     );
