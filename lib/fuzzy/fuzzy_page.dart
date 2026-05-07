@@ -671,13 +671,13 @@ class _MembershipCardState extends State<_MembershipCard> {
     if (_selectedTab == 0) {
       typeLabel = "PH";
       inputValue = fuzzy.ph;
-      statusDominan = fuzzy.statusPh.toUpperCase();
+      statusDominan = fuzzy.membershipStatusPh.toUpperCase();
       inputSuffix = "pH";
       typeKey = 'ph';
     } else if (_selectedTab == 1) {
       typeLabel = "TDS";
       inputValue = fuzzy.tds;
-      statusDominan = fuzzy.statusNutrisi.toUpperCase();
+      statusDominan = fuzzy.membershipStatusTds.toUpperCase();
       inputSuffix = "PPM";
       typeKey = 'tds';
     } else {

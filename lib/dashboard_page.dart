@@ -1378,9 +1378,8 @@ class _DashboardPageState extends State<DashboardPage> {
                 const Icon(Icons.chevron_right, color: Colors.white70),
               ],
             ),
-            const SizedBox(height: 20),
             const Text(
-              "Status Kesehatan Nutrisi",
+              "Rekomendasi Sistem",
               style: TextStyle(
                 color: Colors.white70,
                 fontSize: 14,
@@ -1389,13 +1388,15 @@ class _DashboardPageState extends State<DashboardPage> {
             ),
             const SizedBox(height: 4),
             Text(
-              fuzzy.isFuzzyEnabled ? fuzzy.statusNutrisi.toUpperCase() : "NON-AKTIF",
+              fuzzy.isFuzzyEnabled ? fuzzy.rekomendasi.toUpperCase() : "NON-AKTIF",
               style: const TextStyle(
                 color: Colors.white,
-                fontSize: 26,
+                fontSize: 20, // Reduced from 26 to fit longer text
                 fontWeight: FontWeight.w900,
                 letterSpacing: -0.5,
               ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 20),
             Stack(
@@ -1413,7 +1414,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   width:
                       MediaQuery.of(context).size.width *
                       (fuzzy.outputPompa / 100).clamp(0.0, 1.0) *
-                      0.7,
+                      0.75, // Matched with FuzzyPage
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
                       colors: [Colors.white38, Colors.white],
@@ -1433,10 +1434,11 @@ class _DashboardPageState extends State<DashboardPage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _fuzzyInfo(Icons.opacity, "pH ${fuzzy.statusPh}"),
+                _fuzzyInfo(Icons.opacity, "${fuzzy.ph.toStringAsFixed(1)} (${fuzzy.statusPh})"),
+                _fuzzyInfo(Icons.science_outlined, "${fuzzy.tds.toStringAsFixed(0)} PPM"),
                 _fuzzyInfo(
                   Icons.bolt,
-                  "Output ${fuzzy.outputPompa.toStringAsFixed(1)}%",
+                  "${fuzzy.outputPompa.toStringAsFixed(1)}%",
                 ),
               ],
             ),

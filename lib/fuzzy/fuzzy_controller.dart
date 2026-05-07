@@ -168,20 +168,24 @@ class FuzzyController extends ChangeNotifier {
   bool get r2Active => r6 > 0 || r7 > 0 || r8 > 0;
   bool get r3Active => false;
 
-  String get statusPh {
-    if (muPhRendah > muPhNormal && muPhRendah > muPhTinggi) {
-      return "Asam";
-    } else if (muPhNormal > muPhTinggi) {
-      return "Normal";
-    } else {
-      return "Basa";
-    }
+  String get membershipStatusPh {
+    if (muPhRendah >= muPhNormal && muPhRendah >= muPhTinggi) return "Rendah";
+    if (muPhNormal >= muPhTinggi) return "Normal";
+    return "Tinggi";
   }
+
+  String get membershipStatusTds {
+    if (muTdsRendah >= muTdsNormal && muTdsRendah >= muTdsTinggi) return "Rendah";
+    if (muTdsNormal >= muTdsTinggi) return "Normal";
+    return "Tinggi";
+  }
+
+  String get statusPh => membershipStatusPh == "Rendah" ? "Asam" : (membershipStatusPh == "Tinggi" ? "Basa" : "Normal");
 
   String get statusNutrisi {
     if (outputPompaTDS > 70) return "Tinggi";
     if (outputPompaTDS > 30) return "Sedang";
-    return "Rendah";
+    return "Optimal";
   }
 
   List<Map<String, dynamic>> logRekomendasi = [];
