@@ -555,6 +555,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Widget _plantStatusOverview(BuildContext context, SensorData? data) {
     final plant = context.watch<PlantProvider>().activePlant;
+    final fuzzy = context.watch<FuzzyController>();
 
     if (plant == null) {
       return _PremiumCard(
@@ -719,15 +720,15 @@ class _DashboardPageState extends State<DashboardPage> {
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        const Icon(
-                          Icons.psychology_outlined,
+                        Icon(
+                          fuzzy.isFuzzyEnabled ? Icons.psychology_outlined : Icons.do_not_disturb_on_outlined,
                           color: Colors.white60,
                           size: 14,
                         ),
                         const SizedBox(width: 6),
-                        const Text(
-                          "FUZZY MAMDANI ACTIVE",
-                          style: TextStyle(
+                        Text(
+                          fuzzy.isFuzzyEnabled ? "FUZZY MAMDANI ACTIVE" : "SISTEM OTOMATIS NONAKTIF",
+                          style: const TextStyle(
                             color: Colors.white60,
                             fontSize: 10,
                             fontWeight: FontWeight.w900,
@@ -1330,9 +1331,9 @@ class _DashboardPageState extends State<DashboardPage> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                const Text(
-                  "LOGIKA FUZZY",
-                  style: TextStyle(
+                Text(
+                  fuzzy.isFuzzyEnabled ? "LOGIKA FUZZY" : "FUZZY DINONAKTIFKAN",
+                  style: const TextStyle(
                     color: Colors.white70,
                     fontSize: 11,
                     fontWeight: FontWeight.w900,
@@ -1354,7 +1355,7 @@ class _DashboardPageState extends State<DashboardPage> {
             ),
             const SizedBox(height: 4),
             Text(
-              fuzzy.statusNutrisi.toUpperCase(),
+              fuzzy.isFuzzyEnabled ? fuzzy.statusNutrisi.toUpperCase() : "NON-AKTIF",
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 26,

@@ -6,6 +6,7 @@ import 'fuzzy_info_page.dart';
 import 'package:agrinova/providers/sensor_provider.dart';
 import 'package:agrinova/providers/plant_provider.dart';
 import 'package:agrinova/models/fuzzy_thresholds.dart';
+import '../settings/settings_helper.dart';
 
 class FuzzyPage extends StatefulWidget {
   const FuzzyPage({super.key});
@@ -84,20 +85,34 @@ class _FuzzyPageState extends State<FuzzyPage> {
 
   // ================= APP BAR =================
   AppBar _appBar(BuildContext context) {
+    final fuzzy = context.watch<FuzzyController>();
+    
     return AppBar(
       backgroundColor: Colors.transparent,
       elevation: 0,
       centerTitle: true,
       title: const Text(
         'ANALISIS FUZZY',
-        style: TextStyle(fontWeight: FontWeight.w900, fontSize: 20, letterSpacing: 0.5),
+        style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18, letterSpacing: 0.5),
       ),
       actions: [
+        Transform.scale(
+          scale: 0.8,
+          child: Switch(
+            value: fuzzy.isFuzzyEnabled,
+            onChanged: (v) async {
+              fuzzy.toggleFuzzy(v);
+              await SettingsHelper.saveMode(v ? 'on' : 'off');
+            },
+            activeColor: const Color(0xff03AF55),
+            activeTrackColor: const Color(0xff03AF55).withValues(alpha: 0.2),
+          ),
+        ),
         IconButton(
           onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FuzzyInfoPage())),
           icon: const Icon(Icons.info_outline, color: Color(0xff03AF55)),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 4),
       ],
     );
   }

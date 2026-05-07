@@ -36,9 +36,12 @@ class _SettingsPageState extends State<SettingsPage> {
 
       notifController.isEnabled = notif;
 
-      if (modeStr == 'auto') fuzzy.setMode(SystemMode.auto);
-      if (modeStr == 'semi') fuzzy.setMode(SystemMode.semiAuto);
-      if (modeStr == 'manual') fuzzy.setMode(SystemMode.manual);
+      // Map old modes or load new ON/OFF mode
+      if (modeStr == 'on' || modeStr == 'auto' || modeStr == 'semi') {
+        fuzzy.setMode(SystemMode.on);
+      } else {
+        fuzzy.setMode(SystemMode.off);
+      }
 
       fuzzy.interval = interval;
       fuzzy.startTimer();
@@ -132,43 +135,20 @@ class _SettingsPageState extends State<SettingsPage> {
     final fuzzy = context.watch<FuzzyController>();
 
     return _PremiumCard(
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(color: const Color(0xff03AF55).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
-                child: const Icon(Icons.psychology_rounded, color: Color(0xff03AF55), size: 20),
-              ),
-              const SizedBox(width: 12),
-              const Text('MODE OPERASI', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13)),
-            ],
+          _switchTile(
+            'Otomatisasi Sistem Fuzzy', 
+            fuzzy.isFuzzyEnabled, 
+            (v) async {
+              fuzzy.toggleFuzzy(v);
+              await SettingsHelper.saveMode(v ? 'on' : 'off');
+            }, 
+            Icons.psychology_rounded
           ),
-          const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            decoration: BoxDecoration(color: Colors.grey.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(16)),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<SystemMode>(
-                value: fuzzy.mode,
-                isExpanded: true,
-                items: const [
-                  DropdownMenuItem(value: SystemMode.auto, child: Text("Otomatis (Logika Fuzzy)", style: TextStyle(fontWeight: FontWeight.bold))),
-                  DropdownMenuItem(value: SystemMode.semiAuto, child: Text("Semi Otomatis", style: TextStyle(fontWeight: FontWeight.bold))),
-                  DropdownMenuItem(value: SystemMode.manual, child: Text("Manual (Kendali User)", style: TextStyle(fontWeight: FontWeight.bold))),
-                ],
-                onChanged: (v) async {
-                  if (v != null) {
-                    context.read<FuzzyController>().setMode(v);
-                    String modeStr = v == SystemMode.semiAuto ? 'semi' : (v == SystemMode.manual ? 'manual' : 'auto');
-                    await SettingsHelper.saveMode(modeStr);
-                  }
-                },
-              ),
-            ),
-          ),
+          const Divider(indent: 50, endIndent: 20),
+          _listItem('Status Operasi', fuzzy.isFuzzyEnabled ? 'AKTIF' : 'NON-AKTIF', Icons.settings_power_rounded),
         ],
       ),
     );

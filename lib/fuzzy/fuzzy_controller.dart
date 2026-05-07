@@ -8,7 +8,8 @@ import 'package:agrinova/notification/notification_model.dart';
 import 'package:agrinova/models/fuzzy_thresholds.dart';
 import 'dart:async';
 
-enum SystemMode { auto, semiAuto, manual }
+// Sistem sekarang hanya ON atau OFF
+enum SystemMode { on, off }
 
 class FuzzyController extends ChangeNotifier {
   NotificationController notificationController;
@@ -80,10 +81,8 @@ class FuzzyController extends ChangeNotifier {
   double tds = 800;
 
   // MODE
-  SystemMode mode = SystemMode.auto;
-  bool get isAuto => mode == SystemMode.auto;
-  bool get isManual => mode == SystemMode.manual;
-  bool get isSemiAuto => mode == SystemMode.semiAuto;
+  SystemMode mode = SystemMode.on;
+  bool get isFuzzyEnabled => mode == SystemMode.on;
 
   bool? pompaOverride;
   bool? kipasOverride;
@@ -243,7 +242,14 @@ class FuzzyController extends ChangeNotifier {
   }
 
   void evaluateFuzzy() {
-    if (isManual) return;
+    if (!isFuzzyEnabled) {
+      outputPompaTDS = 0;
+      outputPompaPH = 0;
+      pompaAktif = false;
+      rekomendasi = "Sistem Fuzzy Dinonaktifkan";
+      notifyListeners();
+      return;
+    }
 
     final thresholds = plantProvider.currentThresholds;
     final phL = thresholds.phLimits; // [a, b, c, d]
@@ -366,46 +372,28 @@ class FuzzyController extends ChangeNotifier {
       _saveFuzzyLog();
     }
 
-    kipasAktif = ph > 7;
-    aeratorAktif = true;
-
-    // hasil fuzzy asli
-    bool pompaFuzzy = outputPompa > 40;
-    bool kipasFuzzy = ph > 7;
-    bool aeratorFuzzy = true;
-
     // ================= MODE HANDLING =================
-
-    if (isManual) {
-      // full manual → pakai override semua
-      pompaAktif = pompaOverride ?? pompaAktif;
-      kipasAktif = kipasOverride ?? kipasAktif;
-      aeratorAktif = aeratorOverride ?? aeratorAktif;
-    } else if (isSemiAuto) {
-      // combine → pakai override kalau ada
-      pompaAktif = pompaOverride ?? pompaFuzzy;
-      kipasAktif = kipasOverride ?? kipasFuzzy;
-      aeratorAktif = aeratorOverride ?? aeratorFuzzy;
+    // Pompa hanya dikendalikan jika Fuzzy ON
+    if (isFuzzyEnabled) {
+      pompaAktif = outputPompaTDS > 40 || outputPompaPH > 40;
     } else {
-      // full auto → pakai fuzzy
-      pompaAktif = pompaFuzzy;
-      kipasAktif = kipasFuzzy;
-      aeratorAktif = aeratorFuzzy;
+      pompaAktif = false;
     }
+
+    // Kipas dan Aerator tetap manual independen
+    kipasAktif = kipasOverride ?? kipasAktif;
+    aeratorAktif = aeratorOverride ?? aeratorAktif;
 
     notifyListeners();
   }
 
   void setMode(SystemMode newMode) {
     mode = newMode;
+    evaluateFuzzy();
+  }
 
-    if (mode == SystemMode.auto) {
-      // reset override kalau full auto
-      pompaOverride = null;
-      kipasOverride = null;
-      aeratorOverride = null;
-    }
-
+  void toggleFuzzy(bool value) {
+    mode = value ? SystemMode.on : SystemMode.off;
     evaluateFuzzy();
   }
 

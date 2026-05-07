@@ -128,14 +128,6 @@ class _ControlPageState extends State<ControlPage> {
               _sectionTitle("Kendali Manual"),
               const SizedBox(height: 12),
               _switchCard(fuzzy),
-              const SizedBox(height: 24),
-              _sectionTitle("Parameter Target"),
-              const SizedBox(height: 12),
-              _pompaCard(fuzzy),
-              const SizedBox(height: 16),
-              _kipasCard(fuzzy),
-              const SizedBox(height: 16),
-              _aeratorCard(fuzzy),
             ],
           ),
         ),
@@ -194,28 +186,10 @@ class _ControlPageState extends State<ControlPage> {
       child: Column(
         children: [
           _switchTile(
-            'Pompa Nutrisi (TDS)',
-            fuzzy.outputPompaTDS > 50 || (fuzzy.isManual && (fuzzy.pompaOverride ?? false)),
-            (v) => context.read<FuzzyController>().setPompaManual(v),
-            fuzzy.isAuto,
-            fuzzy.pompaOverride != null,
-            Icons.water_drop,
-          ),
-          const Divider(indent: 50, endIndent: 20),
-          _switchTile(
-            'Pompa Koreksi pH',
-            fuzzy.outputPompaPH > 50 || (fuzzy.isManual && (fuzzy.pompaOverride ?? false)),
-            (v) => context.read<FuzzyController>().setPompaManual(v),
-            fuzzy.isAuto,
-            fuzzy.pompaOverride != null,
-            Icons.science_outlined,
-          ),
-          const Divider(indent: 50, endIndent: 20),
-          _switchTile(
             'Aerator Bak',
             aerator,
             (v) => context.read<FuzzyController>().setAeratorManual(v),
-            fuzzy.isAuto,
+            false, // Selalu aktif (Manual)
             fuzzy.aeratorOverride != null,
             Icons.air,
           ),
@@ -224,16 +198,16 @@ class _ControlPageState extends State<ControlPage> {
             'Kipas Ruangan',
             kipas,
             (v) => context.read<FuzzyController>().setKipasManual(v),
-            fuzzy.isAuto,
+            false, // Selalu aktif (Manual)
             fuzzy.kipasOverride != null,
             Icons.wind_power,
           ),
           const Divider(indent: 50, endIndent: 20),
           _switchTile(
-            'Lampu Growlight',
+            'Lampu',
             lampu,
             (v) => setState(() => lampu = v),
-            fuzzy.isAuto,
+            false, // Selalu aktif (Manual)
             false,
             Icons.lightbulb_outline,
           ),
@@ -277,96 +251,6 @@ class _ControlPageState extends State<ControlPage> {
     );
   }
 
-  Widget _pompaCard(FuzzyController fuzzy) {
-    final plant = context.watch<PlantProvider>().activePlant;
-    final phase = context.watch<PlantProvider>().selectedPhase;
-    
-    double minTds = plant != null ? (phase == "Vegetatif" ? plant.targetTdsVegetatifMin : plant.targetTdsPembesaranMin) : 500;
-    double maxTds = plant != null ? (phase == "Vegetatif" ? plant.targetTdsVegetatifMax : plant.targetTdsPembesaranMax) : 1200;
-
-    return _PremiumCard(
-      child: Column(
-        children: [
-          _autoHeader('Target TDS (${phase.toUpperCase()})', autoPompa, (v) => setState(() => autoPompa = v), fuzzy.isAuto),
-          const SizedBox(height: 12),
-          SliderTheme(
-            data: SliderTheme.of(context).copyWith(
-              activeTrackColor: const Color(0xff03AF55),
-              inactiveTrackColor: const Color(0xff03AF55).withValues(alpha: 0.1),
-              thumbColor: Colors.white,
-              overlayColor: const Color(0xff03AF55).withValues(alpha: 0.2),
-            ),
-            child: Slider(
-              value: tdsValue.clamp(minTds, maxTds),
-              min: minTds, max: maxTds,
-              onChanged: (autoPompa || fuzzy.isAuto) ? null : (v) => setState(() => tdsValue = v),
-            ),
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('${minTds.toInt()} PPM', style: TextStyle(fontSize: 10, color: Colors.grey.shade500, fontWeight: FontWeight.bold)),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                decoration: BoxDecoration(color: const Color(0xff03AF55).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
-                child: Text('${tdsValue.toInt()} PPM', style: const TextStyle(color: Color(0xff03AF55), fontWeight: FontWeight.w900)),
-              ),
-              Text('${maxTds.toInt()} PPM', style: TextStyle(fontSize: 10, color: Colors.grey.shade500, fontWeight: FontWeight.bold)),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _kipasCard(FuzzyController fuzzy) {
-    return _PremiumCard(
-      child: Column(
-        children: [
-          _autoHeader('Target Suhu Ruangan', autoKipas, (v) => setState(() => autoKipas = v), fuzzy.isAuto),
-          const SizedBox(height: 16),
-          TextField(
-            enabled: !autoKipas && !fuzzy.isAuto,
-            keyboardType: TextInputType.number,
-            style: const TextStyle(fontWeight: FontWeight.w900),
-            decoration: InputDecoration(
-              labelText: "Suhu (°C)",
-              labelStyle: const TextStyle(fontWeight: FontWeight.bold),
-              filled: true,
-              fillColor: Colors.grey.withValues(alpha: 0.05),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
-              prefixIcon: const Icon(Icons.thermostat, color: Color(0xff03AF55)),
-            ),
-            controller: TextEditingController(text: suhuTarget.toString()),
-            onChanged: (v) => suhuTarget = int.tryParse(v) ?? suhuTarget,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _aeratorCard(FuzzyController fuzzy) {
-    return _PremiumCard(
-      child: Column(
-        children: [
-          _autoHeader('Durasi Aerasi Harian', autoAerator, (v) => setState(() => autoAerator = v), fuzzy.isAuto),
-          const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            decoration: BoxDecoration(color: Colors.grey.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(16)),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<int>(
-                value: durasiAerator,
-                isExpanded: true,
-                items: [1, 2, 3, 4].map((e) => DropdownMenuItem(value: e, child: Text('$e Jam / Hari', style: const TextStyle(fontWeight: FontWeight.bold)))).toList(),
-                onChanged: (!autoAerator && !fuzzy.isAuto) ? (v) => setState(() => durasiAerator = v ?? durasiAerator) : null,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _autoHeader(String title, bool value, Function(bool) onChanged, bool fuzzyAuto) {
     final isActive = value || fuzzyAuto;
