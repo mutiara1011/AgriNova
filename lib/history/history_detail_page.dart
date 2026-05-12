@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../models/plant_cycle.dart';
+import 'package:agrinova/models/plant_cycle.dart';
 import '../models/sensor_data.dart';
 import '../services/api_service.dart';
 import 'package:intl/intl.dart';

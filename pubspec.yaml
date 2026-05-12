@@ -41,6 +41,7 @@ dependencies:
   shared_preferences: ^2.2.2
   intl: ^0.19.0
   image_picker: ^1.2.2
+  audioplayers: ^6.6.0
 
 dev_dependencies:
   flutter_test:
@@ -69,6 +70,7 @@ flutter:
     - assets/images/kangkung.png
     - assets/images/pakcoy.png
     - assets/images/selada.png
+    - assets/sounds/
 
 
 

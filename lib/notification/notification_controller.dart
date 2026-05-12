@@ -2,12 +2,16 @@ import 'dart:convert';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:audioplayers/audioplayers.dart';
 import 'notification_model.dart';
 
 class NotificationController extends ChangeNotifier {
   List<AppNotification> _notifications = [];
   bool isEnabled = true;
+  bool isMuted = false;
   static const String _notifKey = 'app_notifications';
+
+  final AudioPlayer _audioPlayer = AudioPlayer();
   
   final _newNotificationStream = StreamController<AppNotification>.broadcast();
   Stream<AppNotification> get newNotificationStream => _newNotificationStream.stream;
@@ -55,7 +59,26 @@ class NotificationController extends ChangeNotifier {
     }
     
     _saveNotifications();
+    
+    // 🔥 Play Sound if not muted
+    if (type == NotificationType.warning && !isMuted) {
+      _playSound();
+    }
+
     notifyListeners();
+  }
+
+  Future<void> _playSound() async {
+    try {
+      // Avoid overlapping play calls if already playing the same alert
+      if (_audioPlayer.state == PlayerState.playing) {
+        return; 
+      }
+      
+      await _audioPlayer.play(AssetSource('sounds/buzzer.mp3'));
+    } catch (e) {
+      debugPrint("Error playing sound: $e");
+    }
   }
 
   void markAsShown(AppNotification notif) {
@@ -74,6 +97,7 @@ class NotificationController extends ChangeNotifier {
   @override
   void dispose() {
     _newNotificationStream.close();
+    _audioPlayer.dispose();
     super.dispose();
   }
 }

@@ -7,6 +7,8 @@ import 'providers/plant_provider.dart';
 import 'dart:async';
 import '../notification/notification_controller.dart';
 import '../notification/notification_widget.dart';
+import 'package:agrinova/models/plant_cycle.dart';
+
 
 class ControlPage extends StatefulWidget {
   const ControlPage({super.key});
@@ -252,32 +254,7 @@ class _ControlPageState extends State<ControlPage> {
   }
 
 
-  Widget _autoHeader(String title, bool value, Function(bool) onChanged, bool fuzzyAuto) {
-    final isActive = value || fuzzyAuto;
-    return Row(
-      children: [
-        Expanded(child: Text(title, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16))),
-        GestureDetector(
-          onTap: fuzzyAuto ? null : () => onChanged(!value),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 300),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: isActive ? const Color(0xff03AF55).withValues(alpha: 0.1) : Colors.grey.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              children: [
-                Icon(isActive ? Icons.auto_awesome : Icons.touch_app_outlined, size: 14, color: isActive ? const Color(0xff03AF55) : Colors.grey),
-                const SizedBox(width: 6),
-                Text(isActive ? 'AUTO' : 'MANUAL', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: isActive ? const Color(0xff03AF55) : Colors.grey)),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
+
 
   Widget _warningCard(BuildContext context) {
     final notif = context.watch<NotificationController>();

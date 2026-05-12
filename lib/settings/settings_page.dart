@@ -8,6 +8,8 @@ import 'theme_controller.dart';
 import '../providers/plant_provider.dart';
 import '../onboarding/plant_selection_page.dart';
 import '../history/cycle_history_page.dart';
+import 'package:agrinova/models/plant_cycle.dart';
+
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});

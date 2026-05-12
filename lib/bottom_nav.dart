@@ -3,6 +3,10 @@ import 'dashboard_page.dart';
 import 'control_page.dart';
 import 'fuzzy/fuzzy_page.dart';
 import 'settings/settings_page.dart';
+import 'package:provider/provider.dart';
+import 'notification/notification_controller.dart';
+import 'notification/notification_service.dart';
+import 'dart:async';
 
 class BottomNav extends StatefulWidget {
   const BottomNav({super.key});
@@ -14,6 +18,7 @@ class BottomNav extends StatefulWidget {
 class _BottomNavState extends State<BottomNav> {
   int index = 0;
   List<Widget>? _pages;
+  StreamSubscription? _notifSubscription;
 
   @override
   void initState() {
@@ -24,6 +29,21 @@ class _BottomNavState extends State<BottomNav> {
       const FuzzyPage(),
       const SettingsPage(),
     ];
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final notifController = context.read<NotificationController>();
+      _notifSubscription = notifController.newNotificationStream.listen((notif) {
+        if (mounted) {
+          showGlobalNotification(context, notif);
+        }
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _notifSubscription?.cancel();
+    super.dispose();
   }
 
 

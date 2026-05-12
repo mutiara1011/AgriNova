@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/plant_provider.dart';
-import '../models/plant_cycle.dart';
+import 'package:agrinova/models/plant_cycle.dart';
 import 'package:intl/intl.dart';
 import 'history_detail_page.dart';
 

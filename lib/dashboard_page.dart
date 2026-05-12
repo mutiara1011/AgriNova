@@ -11,7 +11,6 @@ import 'package:agrinova/providers/calibration_provider.dart';
 import 'package:agrinova/models/sensor_data.dart';
 import 'package:agrinova/providers/plant_provider.dart';
 import 'package:agrinova/notification/notification_controller.dart';
-import 'package:agrinova/notification/notification_model.dart';
 import 'package:agrinova/onboarding/plant_selection_page.dart';
 import 'package:agrinova/models/plant_cycle.dart';
 
@@ -258,24 +257,31 @@ class _DashboardPageState extends State<DashboardPage> {
   List<String> _getErrorMessages(SensorData? data) {
     final msgs = <String>[];
     if (data == null) return msgs;
-    if (data.airTemp == -1 && data.airHumidity == -1)
+    if (data.airTemp == -1 && data.airHumidity == -1) {
       msgs.add("Sensor Suhu/Kelembaban Udara (DHT22) Mati/Terlepas!");
-    if (data.waterTemp == -1)
+    }
+    if (data.waterTemp == -1) {
       msgs.add("Sensor Suhu Air (DS18B20) Mati/Terlepas!");
-    if (data.tdsPPM == 0 && data.waterTemp > 0)
+    }
+    if (data.tdsPPM == 0 && data.waterTemp > 0) {
       msgs.add("Sensor Nutrisi (TDS) Mati/Terlepas!");
-    if (data.waterTemp > 35)
+    }
+    if (data.waterTemp > 35) {
       msgs.add(
         "Suhu Air Terlalu Panas! (${data.waterTemp.toStringAsFixed(1)}°C)",
       );
-    if (data.tdsPPM > 1000)
+    }
+    if (data.tdsPPM > 1000) {
       msgs.add(
         "Nutrisi TDS Terlalu Tinggi! (${data.tdsPPM.toStringAsFixed(0)} ppm)",
       );
-    if (data.phValue < 3.0 || data.phValue > 10.0)
+    }
+    if (data.phValue < 3.0 || data.phValue > 10.0) {
       msgs.add("pH Air Kritis! (${data.phValue.toStringAsFixed(1)})");
-    if (data.systemState == 7 && msgs.isEmpty)
+    }
+    if (data.systemState == 7 && msgs.isEmpty) {
       msgs.add("Terjadi Kesalahan Sistem pada Alat!");
+    }
     return msgs;
   }
 
@@ -563,7 +569,7 @@ class _DashboardPageState extends State<DashboardPage> {
         child: InkWell(
           onTap: () => Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => const PlantSelectionPage()),
+            MaterialPageRoute(builder: (_) => PlantSelectionPage()),
           ),
           borderRadius: BorderRadius.circular(28),
           child: Container(
@@ -1527,12 +1533,15 @@ class _PremiumSensorTile extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.baseline,
                 textBaseline: TextBaseline.alphabetic,
                 children: [
-                  Text(
-                    value,
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: -0.5,
+                  Flexible(
+                    child: Text(
+                      value,
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -0.5,
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                   const SizedBox(width: 4),

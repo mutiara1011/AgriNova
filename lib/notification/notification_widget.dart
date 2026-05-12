@@ -72,10 +72,14 @@ class NotificationCard extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      notif.title,
-                      style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15),
+                    Expanded(
+                      child: Text(
+                        notif.title,
+                        style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15),
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
+                    const SizedBox(width: 8),
                     Text(
                       _formatTime(notif.time),
                       style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.grey.shade400),

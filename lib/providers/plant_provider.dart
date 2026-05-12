@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/fuzzy_thresholds.dart';
-import '../models/plant_cycle.dart';
+import 'package:agrinova/models/plant_cycle.dart';
 import '../services/api_service.dart';
 
 class PlantProvider extends ChangeNotifier {
