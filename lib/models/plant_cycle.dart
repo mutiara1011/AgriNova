@@ -32,20 +32,20 @@ class PlantCycle {
   });
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'name': name,
-        'startDate': startDate.toIso8601String(),
-        'endDate': endDate?.toIso8601String(),
-        'isActive': isActive,
-        'targetPhMin': targetPhMin,
-        'targetPhMax': targetPhMax,
-        'targetTdsVegetatifMin': targetTdsVegetatifMin,
-        'targetTdsVegetatifMax': targetTdsVegetatifMax,
-        'targetTdsPembesaranMin': targetTdsPembesaranMin,
-        'targetTdsPembesaranMax': targetTdsPembesaranMax,
-        'harvestDays': harvestDays,
-        'historyData': historyData.map((e) => e.toJson()).toList(),
-      };
+    'id': id,
+    'name': name,
+    'startDate': startDate.toIso8601String(),
+    'endDate': endDate?.toIso8601String(),
+    'isActive': isActive,
+    'targetPhMin': targetPhMin,
+    'targetPhMax': targetPhMax,
+    'targetTdsVegetatifMin': targetTdsVegetatifMin,
+    'targetTdsVegetatifMax': targetTdsVegetatifMax,
+    'targetTdsPembesaranMin': targetTdsPembesaranMin,
+    'targetTdsPembesaranMax': targetTdsPembesaranMax,
+    'harvestDays': harvestDays,
+    'historyData': historyData.map((e) => e.toJson()).toList(),
+  };
 
   factory PlantCycle.fromJson(Map<String, dynamic> json) {
     return PlantCycle(
@@ -59,9 +59,14 @@ class PlantCycle {
       targetTdsVegetatifMin: json['targetTdsVegetatifMin']?.toDouble() ?? 500,
       targetTdsVegetatifMax: json['targetTdsVegetatifMax']?.toDouble() ?? 800,
       targetTdsPembesaranMin: json['targetTdsPembesaranMin']?.toDouble() ?? 800,
-      targetTdsPembesaranMax: json['targetTdsPembesaranMax']?.toDouble() ?? 1200,
+      targetTdsPembesaranMax:
+          json['targetTdsPembesaranMax']?.toDouble() ?? 1200,
       harvestDays: json['harvestDays'] ?? 30,
-      historyData: json['historyData'] != null ? (json['historyData'] as List).map((e) => SensorData.fromJson(e)).toList() : [],
+      historyData: json['historyData'] != null
+          ? (json['historyData'] as List)
+                .map((e) => SensorData.fromJson(e))
+                .toList()
+          : [],
     );
   }
 
@@ -87,10 +92,14 @@ class PlantCycle {
       isActive: isActive ?? this.isActive,
       targetPhMin: targetPhMin ?? this.targetPhMin,
       targetPhMax: targetPhMax ?? this.targetPhMax,
-      targetTdsVegetatifMin: targetTdsVegetatifMin ?? this.targetTdsVegetatifMin,
-      targetTdsVegetatifMax: targetTdsVegetatifMax ?? this.targetTdsVegetatifMax,
-      targetTdsPembesaranMin: targetTdsPembesaranMin ?? this.targetTdsPembesaranMin,
-      targetTdsPembesaranMax: targetTdsPembesaranMax ?? this.targetTdsPembesaranMax,
+      targetTdsVegetatifMin:
+          targetTdsVegetatifMin ?? this.targetTdsVegetatifMin,
+      targetTdsVegetatifMax:
+          targetTdsVegetatifMax ?? this.targetTdsVegetatifMax,
+      targetTdsPembesaranMin:
+          targetTdsPembesaranMin ?? this.targetTdsPembesaranMin,
+      targetTdsPembesaranMax:
+          targetTdsPembesaranMax ?? this.targetTdsPembesaranMax,
       historyData: historyData ?? this.historyData,
     );
   }

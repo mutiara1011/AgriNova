@@ -53,7 +53,7 @@ class PlantProvider extends ChangeNotifier {
   }
 
   Future<bool> startNewCycle({
-    required String name, 
+    required String name,
     required DateTime startDate,
     required double targetPhMin,
     required double targetPhMax,
@@ -115,7 +115,7 @@ class PlantProvider extends ChangeNotifier {
 
     // Dynamic thresholds derived from active plant cycle targets
     final p = _activePlant!;
-    
+
     // pH: [AsamEnd, NormalStart, NormalEnd, BasaStart]
     // We use a 0.5 offset from the target range to create the trapezoid slopes
     double phMin = p.targetPhMin;
@@ -132,7 +132,7 @@ class PlantProvider extends ChangeNotifier {
       tdsMin = p.targetTdsPembesaranMin;
       tdsMax = p.targetTdsPembesaranMax;
     }
-    
+
     // Adjusting to match the logic where 'Tinggi' starts at the ideal/upper bound
     // If the gap is too small, we use a default ratio
     if ((tdsMax - tdsMin) < 50) {
@@ -140,9 +140,6 @@ class PlantProvider extends ChangeNotifier {
     }
     List<double> tdsLimits = [tdsMin, tdsMax];
 
-    return FuzzyThresholds(
-      phLimits: phLimits,
-      tdsLimits: tdsLimits,
-    );
+    return FuzzyThresholds(phLimits: phLimits, tdsLimits: tdsLimits);
   }
 }
