@@ -61,11 +61,10 @@ class _HistoryDetailPageState extends State<HistoryDetailPage> {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: Text(widget.cycle.name.toUpperCase(), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: Colors.white)),
+        title: Text(widget.cycle.name.toUpperCase(), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18)),
         centerTitle: true,
-        backgroundColor: Colors.transparent,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: Stack(
         children: [
@@ -100,7 +99,7 @@ class _HistoryDetailPageState extends State<HistoryDetailPage> {
                   else
                     Column(
                       children: [
-                        _buildChartCard("Ketinggian Air", _cycleData, (d) => 12.0, const Color(0xff0ea5e9), "cm"), // Mock for now if not in SensorData
+                        _buildChartCard("Ketinggian Air", _cycleData, (d) => d.waterLevel, const Color(0xff0ea5e9), "cm"),
                         const SizedBox(height: 16),
                         _buildChartCard("Suhu Air", _cycleData, (d) => d.waterTemp, const Color(0xff06b6d4), "°C"),
                         const SizedBox(height: 16),

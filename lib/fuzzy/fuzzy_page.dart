@@ -93,7 +93,7 @@ class _FuzzyPageState extends State<FuzzyPage> {
   AppBar _appBar(BuildContext context) {
 
     return AppBar(
-      backgroundColor: Colors.transparent,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       elevation: 0,
       centerTitle: true,
       title: const Text(

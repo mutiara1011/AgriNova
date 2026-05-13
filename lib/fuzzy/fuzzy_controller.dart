@@ -203,7 +203,7 @@ class FuzzyController extends ChangeNotifier {
     waterTemp = sensorProvider.latestData!.waterTemp;
     if (waterTemp <= 0) waterTemp = 25.0; // fallback default
     double suhu = waterTemp;
-    ketinggianAir = 12.0; // Default karena API tidak memberikan ini
+    ketinggianAir = sensorProvider.latestData!.waterLevel;
 
     evaluateFuzzy();
 
@@ -339,33 +339,34 @@ class FuzzyController extends ChangeNotifier {
     }
 
     // --- TDS Fuzzification (Rendah/Normal/Tinggi) ---
-    // TDS Rendah
+    double tdsLow30 = tdsL[0] + (tdsL[1] - tdsL[0]) * 0.3; // batas bawah plateau Normal
+    double tdsHigh70 = tdsL[0] + (tdsL[1] - tdsL[0]) * 0.7; // batas atas plateau Normal
+
+    // TDS Rendah (turun ke 0 di batas bawah plateau Normal)
     if (tds <= tdsL[0]) {
       muTdsRendah = 1;
-    } else if (tds > tdsL[0] && tds < tdsL[1]) {
-      muTdsRendah = (tdsL[1] - tds) / (tdsL[1] - tdsL[0]);
+    } else if (tds > tdsL[0] && tds < tdsLow30) {
+      muTdsRendah = (tdsLow30 - tds) / (tdsLow30 - tdsL[0]);
     } else {
       muTdsRendah = 0;
     }
 
-    // TDS Normal
-    if (tds > tdsL[0] && tds < tdsL[1]) {
-      double mid = (tdsL[0] + tdsL[1]) / 2;
-      if (tds <= mid) {
-        muTdsNormal = (tds - tdsL[0]) / (mid - tdsL[0]);
-      } else {
-        muTdsNormal = (tdsL[1] - tds) / (tdsL[1] - mid);
-      }
+    // TDS Normal (Trapezoid: flat plateau di 30%-70% range)
+    if (tds >= tdsLow30 && tds <= tdsHigh70) {
+      muTdsNormal = 1;
+    } else if (tds > tdsL[0] && tds < tdsLow30) {
+      muTdsNormal = (tds - tdsL[0]) / (tdsLow30 - tdsL[0]);
+    } else if (tds > tdsHigh70 && tds < tdsL[1]) {
+      muTdsNormal = (tdsL[1] - tds) / (tdsL[1] - tdsHigh70);
     } else {
       muTdsNormal = 0;
     }
 
-    // TDS Tinggi
+    // TDS Tinggi (mulai naik dari batas atas plateau)
     if (tds >= tdsL[1]) {
       muTdsTinggi = 1;
-    } else if (tds > (tdsL[0] + tdsL[1])/2 && tds < tdsL[1]) {
-      double mid = (tdsL[0] + tdsL[1]) / 2;
-      muTdsTinggi = (tds - mid) / (tdsL[1] - mid);
+    } else if (tds > tdsHigh70 && tds < tdsL[1]) {
+      muTdsTinggi = (tds - tdsHigh70) / (tdsL[1] - tdsHigh70);
     } else {
       muTdsTinggi = 0;
     }

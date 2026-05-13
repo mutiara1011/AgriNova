@@ -59,7 +59,7 @@ class _SettingsPageState extends State<SettingsPage> {
     return Scaffold(
       extendBodyBehindAppBar: true,
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: _appBar(),
+      appBar: _appBar(context),
       body: SingleChildScrollView(
         padding: EdgeInsets.fromLTRB(16, MediaQuery.of(context).padding.top + 70, 16, 120),
         child: Column(
@@ -97,9 +97,9 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   // ================= APP BAR =================
-  AppBar _appBar() {
+  AppBar _appBar(BuildContext context) {
     return AppBar(
-      backgroundColor: Colors.transparent,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       elevation: 0,
       centerTitle: true,
       title: const Text(

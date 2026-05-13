@@ -57,7 +57,9 @@ class _DetailChartPageState extends State<DetailChartPage> {
   }
 
   void _refreshAnalysis() {
-    final endDateStr = focusDate.toUtc().toIso8601String();
+    // Normalize ke akhir hari (23:59:59) agar backend menghitung mulai dari jam 00:00
+    final endOfDay = DateTime(focusDate.year, focusDate.month, focusDate.day, 23, 59, 59);
+    final endDateStr = endOfDay.toUtc().toIso8601String();
     final plant = context.read<PlantProvider>().activePlant;
     context.read<SensorProvider>().fetchAnalysisData(
       timeRange: activeRange, 
@@ -112,11 +114,10 @@ class _DetailChartPageState extends State<DetailChartPage> {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text("Analisis Parameter", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 20, color: Colors.white)),
+        title: const Text("Analisis Parameter", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 20)),
         centerTitle: true,
-        backgroundColor: Colors.transparent,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -657,7 +658,7 @@ class _DetailChartPageState extends State<DetailChartPage> {
 
   double Function(SensorData) _getSelector(String id) {
     switch (id) {
-      case "waterLevel": return (d) => 12.0;
+      case "waterLevel": return (d) => d.waterLevel;
       case "airTemp": return (d) => d.airTemp;
       case "airHumidity": return (d) => d.airHumidity;
       case "waterTemp": return (d) => d.waterTemp;

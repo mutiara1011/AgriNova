@@ -26,7 +26,7 @@ class DashboardPage extends StatefulWidget {
 class _DashboardPageState extends State<DashboardPage> {
   final PageController controller = PageController();
   late Timer slideTimer;
-  int currentIndex = 0;
+  final ValueNotifier<int> currentIndex = ValueNotifier<int>(0);
   final int chartsLength = 7; // 6 + ketinggian air = 7
   static bool _hasShownSystemAlert = false;
 
@@ -43,12 +43,9 @@ class _DashboardPageState extends State<DashboardPage> {
     slideTimer = Timer.periodic(const Duration(seconds: 5), (_) {
       if (!mounted) return;
       if (controller.hasClients) {
-        currentIndex++;
-        if (currentIndex >= chartsLength) {
-          currentIndex = 0;
-        }
+        currentIndex.value = (currentIndex.value + 1) % chartsLength;
         controller.animateToPage(
-          currentIndex,
+          currentIndex.value,
           duration: const Duration(milliseconds: 400),
           curve: Curves.easeInOut,
         );
@@ -60,6 +57,7 @@ class _DashboardPageState extends State<DashboardPage> {
   void dispose() {
     slideTimer.cancel();
     controller.dispose();
+    currentIndex.dispose();
     super.dispose();
   }
 
@@ -1088,56 +1086,50 @@ class _DashboardPageState extends State<DashboardPage> {
     final data = sensor.latestData;
     final history = sensor.historyData;
 
-    final charts = [
-      _chartItem(
-        "Ketinggian Air",
-        "12.0 cm",
-        const Color(0xff0ea5e9),
-        history,
-        (d) => 12.0,
-      ),
-      _chartItem(
-        "Suhu Udara",
-        "${data?.airTemp.toStringAsFixed(1) ?? '--'}°C",
-        const Color(0xfff97316),
-        history,
-        (d) => d.airTemp,
-      ),
-      _chartItem(
-        "Kelembapan",
-        "${data?.airHumidity.toStringAsFixed(1) ?? '--'}%",
-        const Color(0xff3b82f6),
-        history,
-        (d) => d.airHumidity,
-      ),
-      _chartItem(
-        "Suhu Air",
-        "${data?.waterTemp.toStringAsFixed(1) ?? '--'}°C",
-        const Color(0xff06b6d4),
-        history,
-        (d) => d.waterTemp,
-      ),
-      _chartItem(
-        "Intensitas Cahaya",
-        "${data?.lightLux.toStringAsFixed(0) ?? '--'} Lux",
-        const Color(0xffeab308),
-        history,
-        (d) => d.lightLux,
-      ),
-      _chartItem(
-        "Nutrisi (TDS)",
-        "${data?.tdsPPM.toStringAsFixed(0) ?? '--'} PPM",
-        const Color(0xff8b5cf6),
-        history,
-        (d) => d.tdsPPM,
-      ),
-      _chartItem(
-        "pH Air",
-        data?.phValue.toStringAsFixed(1) ?? '--',
-        const Color(0xff14b8a6),
-        history,
-        (d) => d.phValue,
-      ),
+    // Define configuration lazily instead of building 7 charts eagerly
+    final chartConfigs = [
+      {
+        "title": "Ketinggian Air",
+        "value": "12.0 cm",
+        "color": const Color(0xff0ea5e9),
+        "selector": (SensorData d) => 12.0,
+      },
+      {
+        "title": "Suhu Udara",
+        "value": "${data?.airTemp.toStringAsFixed(1) ?? '--'}°C",
+        "color": const Color(0xfff97316),
+        "selector": (SensorData d) => d.airTemp,
+      },
+      {
+        "title": "Kelembapan",
+        "value": "${data?.airHumidity.toStringAsFixed(1) ?? '--'}%",
+        "color": const Color(0xff3b82f6),
+        "selector": (SensorData d) => d.airHumidity,
+      },
+      {
+        "title": "Suhu Air",
+        "value": "${data?.waterTemp.toStringAsFixed(1) ?? '--'}°C",
+        "color": const Color(0xff06b6d4),
+        "selector": (SensorData d) => d.waterTemp,
+      },
+      {
+        "title": "Intensitas Cahaya",
+        "value": "${data?.lightLux.toStringAsFixed(0) ?? '--'} Lux",
+        "color": const Color(0xffeab308),
+        "selector": (SensorData d) => d.lightLux,
+      },
+      {
+        "title": "Nutrisi (TDS)",
+        "value": "${data?.tdsPPM.toStringAsFixed(0) ?? '--'} PPM",
+        "color": const Color(0xff8b5cf6),
+        "selector": (SensorData d) => d.tdsPPM,
+      },
+      {
+        "title": "pH Air",
+        "value": data?.phValue.toStringAsFixed(1) ?? '--',
+        "color": const Color(0xff14b8a6),
+        "selector": (SensorData d) => d.phValue,
+      },
     ];
 
     final screenHeight = MediaQuery.of(context).size.height;
@@ -1149,31 +1141,45 @@ class _DashboardPageState extends State<DashboardPage> {
             height: screenHeight * 0.25, // Dinamis berdasarkan tinggi layar
             child: PageView.builder(
               controller: controller,
-              itemCount: charts.length,
-              onPageChanged: (index) => setState(() => currentIndex = index),
-              itemBuilder: (context, index) => charts[index],
+              itemCount: chartConfigs.length,
+              onPageChanged: (index) => currentIndex.value = index,
+              itemBuilder: (context, index) {
+                final config = chartConfigs[index];
+                return _chartItem(
+                  config["title"] as String,
+                  config["value"] as String,
+                  config["color"] as Color,
+                  history,
+                  config["selector"] as double Function(SensorData),
+                );
+              },
             ),
           ),
           const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: List.generate(charts.length, (index) {
-                  final isActive = currentIndex == index;
-                  return AnimatedContainer(
-                    duration: const Duration(milliseconds: 300),
-                    margin: const EdgeInsets.symmetric(horizontal: 3),
-                    width: isActive ? 18 : 6,
-                    height: 6,
-                    decoration: BoxDecoration(
-                      color: isActive
-                          ? const Color(0xff03AF55)
-                          : Colors.grey.withValues(alpha: 0.3),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
+              ValueListenableBuilder<int>(
+                valueListenable: currentIndex,
+                builder: (context, currentIdx, _) {
+                  return Row(
+                    children: List.generate(chartConfigs.length, (index) {
+                      final isActive = currentIdx == index;
+                      return AnimatedContainer(
+                        duration: const Duration(milliseconds: 300),
+                        margin: const EdgeInsets.symmetric(horizontal: 3),
+                        width: isActive ? 18 : 6,
+                        height: 6,
+                        decoration: BoxDecoration(
+                          color: isActive
+                              ? const Color(0xff03AF55)
+                              : Colors.grey.withValues(alpha: 0.3),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      );
+                    }),
                   );
-                }),
+                },
               ),
               TextButton.icon(
                 onPressed: () => Navigator.push(

@@ -16,14 +16,13 @@ class CycleHistoryPage extends StatelessWidget {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         centerTitle: true,
         title: const Text(
           "RIWAYAT TANAMAN",
-          style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18, letterSpacing: 0.5, color: Colors.white),
+          style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18, letterSpacing: 0.5),
         ),
-        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: Stack(
         children: [
