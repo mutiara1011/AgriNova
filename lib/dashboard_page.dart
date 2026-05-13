@@ -780,11 +780,7 @@ class _DashboardPageState extends State<DashboardPage> {
     final dateFormat = DateFormat('dd MMM yyyy');
     final startStr = dateFormat.format(plant.startDate);
 
-    // Estimate harvest based on plant type
-    int estDays = 30;
-    if (plant.name.toLowerCase().contains("kangkung")) estDays = 21;
-    if (plant.name.toLowerCase().contains("pakcoy")) estDays = 35;
-    if (plant.name.toLowerCase().contains("selada")) estDays = 45;
+    int estDays = plant.harvestDays;
 
     final harvestDate = plant.startDate.add(Duration(days: estDays));
     final harvestStr = dateFormat.format(harvestDate);
