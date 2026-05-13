@@ -100,6 +100,7 @@ class PlantCycle {
           targetTdsPembesaranMin ?? this.targetTdsPembesaranMin,
       targetTdsPembesaranMax:
           targetTdsPembesaranMax ?? this.targetTdsPembesaranMax,
+      harvestDays: harvestDays ?? this.harvestDays,
       historyData: historyData ?? this.historyData,
     );
   }
