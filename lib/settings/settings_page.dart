@@ -8,8 +8,6 @@ import 'theme_controller.dart';
 import '../providers/plant_provider.dart';
 import '../onboarding/plant_selection_page.dart';
 import '../history/cycle_history_page.dart';
-import 'package:agrinova/models/plant_cycle.dart';
-
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -17,6 +15,7 @@ class SettingsPage extends StatefulWidget {
   @override
   State<SettingsPage> createState() => _SettingsPageState();
 }
+
 class _SettingsPageState extends State<SettingsPage> {
   bool notifikasi = true;
   bool modeGelap = false;
@@ -61,7 +60,12 @@ class _SettingsPageState extends State<SettingsPage> {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: _appBar(context),
       body: SingleChildScrollView(
-        padding: EdgeInsets.fromLTRB(16, MediaQuery.of(context).padding.top + 70, 16, 120),
+        padding: EdgeInsets.fromLTRB(
+          16,
+          MediaQuery.of(context).padding.top + 70,
+          16,
+          120,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -91,7 +95,12 @@ class _SettingsPageState extends State<SettingsPage> {
       padding: const EdgeInsets.only(left: 8),
       child: Text(
         title.toUpperCase(),
-        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: Colors.grey.shade500, letterSpacing: 1),
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w900,
+          color: Colors.grey.shade500,
+          letterSpacing: 1,
+        ),
       ),
     );
   }
@@ -104,7 +113,11 @@ class _SettingsPageState extends State<SettingsPage> {
       centerTitle: true,
       title: const Text(
         'PENGATURAN',
-        style: TextStyle(fontWeight: FontWeight.w900, fontSize: 20, letterSpacing: 0.5),
+        style: TextStyle(
+          fontWeight: FontWeight.w900,
+          fontSize: 20,
+          letterSpacing: 0.5,
+        ),
       ),
     );
   }
@@ -124,9 +137,14 @@ class _SettingsPageState extends State<SettingsPage> {
             await SettingsHelper.saveNotif(v);
           }, Icons.notifications_active_outlined),
           const Divider(indent: 50, endIndent: 20),
-          _switchTile('Mode Gelap / Dark', context.watch<ThemeController>().isDark, (v) {
-            context.read<ThemeController>().toggleTheme(v);
-          }, Icons.dark_mode_outlined),
+          _switchTile(
+            'Mode Gelap / Dark',
+            context.watch<ThemeController>().isDark,
+            (v) {
+              context.read<ThemeController>().toggleTheme(v);
+            },
+            Icons.dark_mode_outlined,
+          ),
         ],
       ),
     );
@@ -141,16 +159,20 @@ class _SettingsPageState extends State<SettingsPage> {
       child: Column(
         children: [
           _switchTile(
-            'Otomatisasi Sistem Fuzzy', 
-            fuzzy.isFuzzyEnabled, 
+            'Otomatisasi Sistem Fuzzy',
+            fuzzy.isFuzzyEnabled,
             (v) async {
               fuzzy.toggleFuzzy(v);
               await SettingsHelper.saveMode(v ? 'on' : 'off');
-            }, 
-            Icons.psychology_rounded
+            },
+            Icons.psychology_rounded,
           ),
           const Divider(indent: 50, endIndent: 20),
-          _listItem('Status Operasi', fuzzy.isFuzzyEnabled ? 'AKTIF' : 'NON-AKTIF', Icons.settings_power_rounded),
+          _listItem(
+            'Status Operasi',
+            fuzzy.isFuzzyEnabled ? 'AKTIF' : 'NON-AKTIF',
+            Icons.settings_power_rounded,
+          ),
         ],
       ),
     );
@@ -166,18 +188,31 @@ class _SettingsPageState extends State<SettingsPage> {
             children: [
               Container(
                 padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(color: const Color(0xff03AF55).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
-                child: const Icon(Icons.timer_rounded, color: Color(0xff03AF55), size: 20),
+                decoration: BoxDecoration(
+                  color: const Color(0xff03AF55).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.timer_rounded,
+                  color: Color(0xff03AF55),
+                  size: 20,
+                ),
               ),
               const SizedBox(width: 12),
-              const Text('INTERVAL PEMROSESAN', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13)),
+              const Text(
+                'INTERVAL PEMROSESAN',
+                style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13),
+              ),
             ],
           ),
           const SizedBox(height: 16),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             width: double.infinity,
-            decoration: BoxDecoration(color: Colors.grey.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(16)),
+            decoration: BoxDecoration(
+              color: Colors.grey.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(16),
+            ),
             child: const Text(
               'Update Otomatis setiap 10 Menit',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
@@ -186,13 +221,16 @@ class _SettingsPageState extends State<SettingsPage> {
           const SizedBox(height: 8),
           const Text(
             "*Interval ini dioptimalkan untuk menjaga akurasi data dan efisiensi baterai.",
-            style: TextStyle(fontSize: 11, color: Colors.grey, fontStyle: FontStyle.italic),
+            style: TextStyle(
+              fontSize: 11,
+              color: Colors.grey,
+              fontStyle: FontStyle.italic,
+            ),
           ),
         ],
       ),
     );
   }
-
 
   // ================= TANAMAN =================
   Widget _plantSettingCard() {
@@ -205,17 +243,54 @@ class _SettingsPageState extends State<SettingsPage> {
         children: [
           _listItem('Jenis Komoditas', plant.name, Icons.eco_outlined),
           const Divider(indent: 50, endIndent: 20),
-          _listItem('Lama Tanam', '${plant.hst} Hari Setelah Tanam', Icons.calendar_today_outlined),
+          _listItem(
+            'Lama Tanam',
+            '${plant.hst} Hari Setelah Tanam',
+            Icons.calendar_today_outlined,
+          ),
           const Divider(indent: 50, endIndent: 20),
-          _listItem('Parameter pH Ideal', '${plant.targetPhMin} – ${plant.targetPhMax}', Icons.opacity),
-          _listItem('Parameter TDS (Veg)', '${plant.targetTdsVegetatifMin.toInt()} – ${plant.targetTdsVegetatifMax.toInt()} PPM', Icons.science_outlined),
+          _listItem(
+            'Parameter pH Ideal',
+            '${plant.targetPhMin} – ${plant.targetPhMax}',
+            Icons.opacity,
+          ),
+          _listItem(
+            'Parameter TDS (Veg)',
+            '${plant.targetTdsVegetatifMin.toInt()} – ${plant.targetTdsVegetatifMax.toInt()} PPM',
+            Icons.science_outlined,
+          ),
           const Divider(indent: 50, endIndent: 20),
-          _listItem('Parameter TDS (Pem)', '${plant.targetTdsPembesaranMin.toInt()} – ${plant.targetTdsPembesaranMax.toInt()} PPM', Icons.science_outlined),
+          _listItem(
+            'Parameter TDS (Pem)',
+            '${plant.targetTdsPembesaranMin.toInt()} – ${plant.targetTdsPembesaranMax.toInt()} PPM',
+            Icons.science_outlined,
+          ),
           const Divider(indent: 50, endIndent: 20),
           ListTile(
-            leading: Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: Colors.grey.withValues(alpha: 0.1), shape: BoxShape.circle), child: const Icon(Icons.edit_calendar_outlined, size: 20, color: Colors.grey)),
-            title: const Text("Tanggal Mulai Tanam", style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
-            subtitle: Text("${plant.startDate.day}/${plant.startDate.month}/${plant.startDate.year}", style: TextStyle(fontSize: 12, color: Colors.grey.shade600, fontWeight: FontWeight.bold)),
+            leading: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.grey.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.edit_calendar_outlined,
+                size: 20,
+                color: Colors.grey,
+              ),
+            ),
+            title: const Text(
+              "Tanggal Mulai Tanam",
+              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+            ),
+            subtitle: Text(
+              "${plant.startDate.day}/${plant.startDate.month}/${plant.startDate.year}",
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey.shade600,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
           const SizedBox(height: 16),
           Padding(
@@ -225,14 +300,24 @@ class _SettingsPageState extends State<SettingsPage> {
               height: 45,
               child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xff03AF55).withValues(alpha: 0.1),
+                  backgroundColor: const Color(
+                    0xff03AF55,
+                  ).withValues(alpha: 0.1),
                   foregroundColor: const Color(0xff03AF55),
                   elevation: 0,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
                 icon: const Icon(Icons.history),
-                label: const Text("RIWAYAT TANAMAN", style: TextStyle(fontWeight: FontWeight.w900)),
-                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CycleHistoryPage())),
+                label: const Text(
+                  "RIWAYAT TANAMAN",
+                  style: TextStyle(fontWeight: FontWeight.w900),
+                ),
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const CycleHistoryPage()),
+                ),
               ),
             ),
           ),
@@ -247,10 +332,15 @@ class _SettingsPageState extends State<SettingsPage> {
                   backgroundColor: Colors.red.shade50,
                   foregroundColor: Colors.red,
                   elevation: 0,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
                 onPressed: () => _showEndCycleDialog(context),
-                child: const Text("SELESAI PANEN", style: TextStyle(fontWeight: FontWeight.w900)),
+                child: const Text(
+                  "SELESAI PANEN",
+                  style: TextStyle(fontWeight: FontWeight.w900),
+                ),
               ),
             ),
           ),
@@ -260,13 +350,14 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-
   void _showEndCycleDialog(BuildContext context) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text("Selesai Panen?"),
-        content: const Text("Siklus tanam saat ini akan diakhiri. Riwayat grafik dan sensor akan disimpan ke history, dan notifikasi akan direset."),
+        content: const Text(
+          "Siklus tanam saat ini akan diakhiri. Riwayat grafik dan sensor akan disimpan ke history, dan notifikasi akan direset.",
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -278,14 +369,14 @@ class _SettingsPageState extends State<SettingsPage> {
               final provider = context.read<PlantProvider>();
               final notifController = context.read<NotificationController>();
               final fuzzyController = context.read<FuzzyController>();
-              
+
               // 1. Akhiri siklus di Backend
               await provider.endCycle();
-              
+
               // 2. Reset Notifikasi & Rekomendasi
               notifController.clearNotifications();
               fuzzyController.clearFuzzyLog();
-              
+
               // 3. Kembali ke Halaman Onboarding
               if (context.mounted) {
                 Navigator.pushAndRemoveUntil(
@@ -295,13 +386,15 @@ class _SettingsPageState extends State<SettingsPage> {
                 );
               }
             },
-            child: const Text("Ya, Akhiri", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+            child: const Text(
+              "Ya, Akhiri",
+              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+            ),
           ),
         ],
       ),
     );
   }
-
 
   // ================= ABOUT =================
   Widget _aboutCard() {
@@ -309,11 +402,31 @@ class _SettingsPageState extends State<SettingsPage> {
       padding: EdgeInsets.zero,
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-        leading: Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: const Color(0xff03AF55).withValues(alpha: 0.1), shape: BoxShape.circle), child: const Icon(Icons.info_outline_rounded, color: Color(0xff03AF55), size: 24)),
-        title: const Text('Tentang AgriNova', style: TextStyle(fontWeight: FontWeight.w900)),
-        subtitle: const Text('Informasi sistem & tim pengembang', style: TextStyle(fontSize: 12)),
+        leading: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: const Color(0xff03AF55).withValues(alpha: 0.1),
+            shape: BoxShape.circle,
+          ),
+          child: const Icon(
+            Icons.info_outline_rounded,
+            color: Color(0xff03AF55),
+            size: 24,
+          ),
+        ),
+        title: const Text(
+          'Tentang AgriNova',
+          style: TextStyle(fontWeight: FontWeight.w900),
+        ),
+        subtitle: const Text(
+          'Informasi sistem & tim pengembang',
+          style: TextStyle(fontSize: 12),
+        ),
         trailing: const Icon(Icons.arrow_forward_ios, size: 14),
-        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AboutPage())),
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const AboutPage()),
+        ),
       ),
     );
   }
@@ -321,16 +434,57 @@ class _SettingsPageState extends State<SettingsPage> {
   // ================= COMPONENTS =================
   Widget _tile(String title, {String? trailing, IconData? icon}) {
     return ListTile(
-      leading: icon != null ? Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: Colors.grey.withValues(alpha: 0.1), shape: BoxShape.circle), child: Icon(icon, size: 20, color: Colors.grey)) : null,
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
-      trailing: trailing != null ? Text(trailing, style: TextStyle(fontWeight: FontWeight.w900, color: Colors.grey.shade600)) : null,
+      leading: icon != null
+          ? Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.grey.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, size: 20, color: Colors.grey),
+            )
+          : null,
+      title: Text(
+        title,
+        style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+      ),
+      trailing: trailing != null
+          ? Text(
+              trailing,
+              style: TextStyle(
+                fontWeight: FontWeight.w900,
+                color: Colors.grey.shade600,
+              ),
+            )
+          : null,
     );
   }
 
-  Widget _switchTile(String title, bool value, Function(bool) onChanged, IconData icon) {
+  Widget _switchTile(
+    String title,
+    bool value,
+    Function(bool) onChanged,
+    IconData icon,
+  ) {
     return ListTile(
-      leading: Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: value ? const Color(0xff03AF55).withValues(alpha: 0.1) : Colors.grey.withValues(alpha: 0.1), shape: BoxShape.circle), child: Icon(icon, size: 20, color: value ? const Color(0xff03AF55) : Colors.grey)),
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+      leading: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: value
+              ? const Color(0xff03AF55).withValues(alpha: 0.1)
+              : Colors.grey.withValues(alpha: 0.1),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(
+          icon,
+          size: 20,
+          color: value ? const Color(0xff03AF55) : Colors.grey,
+        ),
+      ),
+      title: Text(
+        title,
+        style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+      ),
       trailing: Switch(
         value: value,
         onChanged: onChanged,
@@ -343,9 +497,25 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Widget _listItem(String title, String val, IconData icon) {
     return ListTile(
-      leading: Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: Colors.grey.withValues(alpha: 0.1), shape: BoxShape.circle), child: Icon(icon, size: 20, color: Colors.grey)),
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
-      trailing: Text(val, style: TextStyle(fontWeight: FontWeight.w900, color: Colors.grey.shade600)),
+      leading: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: Colors.grey.withValues(alpha: 0.1),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(icon, size: 20, color: Colors.grey),
+      ),
+      title: Text(
+        title,
+        style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+      ),
+      trailing: Text(
+        val,
+        style: TextStyle(
+          fontWeight: FontWeight.w900,
+          color: Colors.grey.shade600,
+        ),
+      ),
     );
   }
 }
@@ -380,4 +550,3 @@ class _PremiumCard extends StatelessWidget {
     );
   }
 }
-

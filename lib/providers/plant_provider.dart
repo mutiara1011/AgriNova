@@ -45,7 +45,7 @@ class PlantProvider extends ChangeNotifier {
       final historyData = await _apiService.getPlantHistory();
       _historyCycles = historyData.map((e) => PlantCycle.fromJson(e)).toList();
     } catch (e) {
-      print('Error loadData in PlantProvider: $e');
+      debugPrint('Error loadData in PlantProvider: $e');
     }
 
     _isLoading = false;

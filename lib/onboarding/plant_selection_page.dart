@@ -93,11 +93,17 @@ class _PlantSelectionPageState extends State<PlantSelectionPage> {
         centerTitle: true,
         title: const Text(
           "MULAI TANAM",
-          style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18, letterSpacing: 0.5),
+          style: TextStyle(
+            fontWeight: FontWeight.w900,
+            fontSize: 18,
+            letterSpacing: 0.5,
+          ),
         ),
       ),
       body: isLoading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xff03AF55)))
+          ? const Center(
+              child: CircularProgressIndicator(color: Color(0xff03AF55)),
+            )
           : SingleChildScrollView(
               padding: const EdgeInsets.all(24.0),
               child: Column(
@@ -105,13 +111,18 @@ class _PlantSelectionPageState extends State<PlantSelectionPage> {
                 children: [
                   const Text(
                     "Pilih Komoditas",
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.grey),
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey,
+                    ),
                   ),
                   const SizedBox(height: 12),
                   _buildDropdown(),
                   const SizedBox(height: 24),
-                  
-                  if (selectedCommodity != null && selectedCommodity!.name == "Tanaman Lainnya")
+
+                  if (selectedCommodity != null &&
+                      selectedCommodity!.name == "Tanaman Lainnya")
                     _buildCustomPlantForm()
                   else if (selectedCommodity != null)
                     _buildCommodityDetailCard(selectedCommodity!),
@@ -119,7 +130,11 @@ class _PlantSelectionPageState extends State<PlantSelectionPage> {
                   const SizedBox(height: 32),
                   const Text(
                     "Tanggal Tanam (Pindah Tanam)",
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.grey),
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey,
+                    ),
                   ),
                   const SizedBox(height: 12),
                   _buildDatePicker(),
@@ -135,11 +150,9 @@ class _PlantSelectionPageState extends State<PlantSelectionPage> {
     // Add "Tanaman Lainnya" option virtually if not in list
     List<Commodity> dropdownList = List.from(commodities);
     if (!dropdownList.any((c) => c.name == "Tanaman Lainnya")) {
-      dropdownList.add(Commodity(
-        id: "custom",
-        name: "Tanaman Lainnya",
-        isCustom: true,
-      ));
+      dropdownList.add(
+        Commodity(id: "custom", name: "Tanaman Lainnya", isCustom: true),
+      );
     }
 
     return Container(
@@ -185,15 +198,14 @@ class _PlantSelectionPageState extends State<PlantSelectionPage> {
             color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
-          )
+          ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           ClipRRect(
-            borderRadius:
-                const BorderRadius.vertical(top: Radius.circular(20)),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
             child: _buildPlantImage(commodity),
           ),
 
@@ -204,27 +216,59 @@ class _PlantSelectionPageState extends State<PlantSelectionPage> {
               children: [
                 Text(
                   commodity.name,
-                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Color(0xff03AF55)),
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w900,
+                    color: Color(0xff03AF55),
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   commodity.description,
-                  style: TextStyle(fontSize: 13, color: Colors.grey.shade600, height: 1.5),
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.grey.shade600,
+                    height: 1.5,
+                  ),
                 ),
                 const SizedBox(height: 20),
                 const Divider(),
                 const SizedBox(height: 10),
-                _buildParameterRow("pH Air", "${commodity.phMin} - ${commodity.phMax}", "Ideal: ${commodity.phIdeal}"),
+                _buildParameterRow(
+                  "pH Air",
+                  "${commodity.phMin} - ${commodity.phMax}",
+                  "Ideal: ${commodity.phIdeal}",
+                ),
                 const SizedBox(height: 12),
-                _buildParameterRow("Nutrisi (Vegetatif)", "${commodity.tdsVegetatifMin.toInt()} - ${commodity.tdsVegetatifMax.toInt()} PPM", "Ideal: ${commodity.tdsVegetatifIdeal} PPM"),
+                _buildParameterRow(
+                  "Nutrisi (Vegetatif)",
+                  "${commodity.tdsVegetatifMin.toInt()} - ${commodity.tdsVegetatifMax.toInt()} PPM",
+                  "Ideal: ${commodity.tdsVegetatifIdeal} PPM",
+                ),
                 const SizedBox(height: 12),
-                _buildParameterRow("Nutrisi (Pembesaran)", "${commodity.tdsPembesaranMin.toInt()} - ${commodity.tdsPembesaranMax.toInt()} PPM", "Ideal: ${commodity.tdsPembesaranIdeal} PPM"),
+                _buildParameterRow(
+                  "Nutrisi (Pembesaran)",
+                  "${commodity.tdsPembesaranMin.toInt()} - ${commodity.tdsPembesaranMax.toInt()} PPM",
+                  "Ideal: ${commodity.tdsPembesaranIdeal} PPM",
+                ),
                 const SizedBox(height: 12),
-                _buildParameterRow("Suhu Udara", "${commodity.airTempMin.toInt()} - ${commodity.airTempMax.toInt()} °C", "Ideal: ${commodity.airTempIdeal} °C"),
+                _buildParameterRow(
+                  "Suhu Udara",
+                  "${commodity.airTempMin.toInt()} - ${commodity.airTempMax.toInt()} °C",
+                  "Ideal: ${commodity.airTempIdeal} °C",
+                ),
                 const SizedBox(height: 12),
-                _buildParameterRow("Suhu Air", "${commodity.waterTempMin.toInt()} - ${commodity.waterTempMax.toInt()} °C", "Ideal: ${commodity.waterTempIdeal} °C"),
+                _buildParameterRow(
+                  "Suhu Air",
+                  "${commodity.waterTempMin.toInt()} - ${commodity.waterTempMax.toInt()} °C",
+                  "Ideal: ${commodity.waterTempIdeal} °C",
+                ),
                 const SizedBox(height: 12),
-                _buildParameterRow("Kelembapan", "${commodity.humidityMin.toInt()} - ${commodity.humidityMax.toInt()} %", "Ideal: ${commodity.humidityIdeal} %"),
+                _buildParameterRow(
+                  "Kelembapan",
+                  "${commodity.humidityMin.toInt()} - ${commodity.humidityMax.toInt()} %",
+                  "Ideal: ${commodity.humidityIdeal} %",
+                ),
                 const SizedBox(height: 20),
                 Container(
                   padding: const EdgeInsets.all(12),
@@ -239,10 +283,20 @@ class _PlantSelectionPageState extends State<PlantSelectionPage> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text("Estimasi Masa Panen", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                          const Text(
+                            "Estimasi Masa Panen",
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                           Text(
                             "+- ${commodity.harvestDays} Hari (Range: ${commodity.harvestDays - commodity.harvestRange} - ${commodity.harvestDays + commodity.harvestRange})",
-                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: Color(0xff03AF55)),
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w900,
+                              color: Color(0xff03AF55),
+                            ),
                           ),
                         ],
                       ),
@@ -266,9 +320,12 @@ class _PlantSelectionPageState extends State<PlantSelectionPage> {
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Text(range, style: const TextStyle(fontWeight: FontWeight.w900)),
-            Text(ideal, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+            Text(
+              ideal,
+              style: const TextStyle(fontSize: 11, color: Colors.grey),
+            ),
           ],
-        )
+        ),
       ],
     );
   }
@@ -286,9 +343,12 @@ class _PlantSelectionPageState extends State<PlantSelectionPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text("Detail Tanaman Baru", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
+            const Text(
+              "Detail Tanaman Baru",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+            ),
             const SizedBox(height: 16),
-            
+
             // Image Picker
             GestureDetector(
               onTap: _pickImage,
@@ -298,7 +358,10 @@ class _PlantSelectionPageState extends State<PlantSelectionPage> {
                 decoration: BoxDecoration(
                   color: Colors.grey.shade100,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey.shade300, style: BorderStyle.solid),
+                  border: Border.all(
+                    color: Colors.grey.shade300,
+                    style: BorderStyle.solid,
+                  ),
                 ),
                 child: _customImage != null
                     ? ClipRRect(
@@ -310,13 +373,19 @@ class _PlantSelectionPageState extends State<PlantSelectionPage> {
                         children: [
                           Icon(Icons.add_a_photo, size: 40, color: Colors.grey),
                           SizedBox(height: 8),
-                          Text("Pilih Foto Tanaman", style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+                          Text(
+                            "Pilih Foto Tanaman",
+                            style: TextStyle(
+                              color: Colors.grey,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ],
                       ),
               ),
             ),
             const SizedBox(height: 16),
-            
+
             TextFormField(
               controller: _nameCtrl,
               decoration: _inputDecoration("Nama Tanaman"),
@@ -329,48 +398,131 @@ class _PlantSelectionPageState extends State<PlantSelectionPage> {
               decoration: _inputDecoration("Deskripsi Singkat"),
             ),
             const SizedBox(height: 20),
-            const Text("Parameter Hidroponik", style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text(
+              "Parameter Hidroponik",
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 12),
-            
+
             Row(
               children: [
-                Expanded(child: TextFormField(controller: _phMinCtrl, decoration: _inputDecoration("pH Min"), keyboardType: TextInputType.number)),
+                Expanded(
+                  child: TextFormField(
+                    controller: _phMinCtrl,
+                    decoration: _inputDecoration("pH Min"),
+                    keyboardType: TextInputType.number,
+                  ),
+                ),
                 const SizedBox(width: 8),
-                Expanded(child: TextFormField(controller: _phMaxCtrl, decoration: _inputDecoration("pH Max"), keyboardType: TextInputType.number)),
+                Expanded(
+                  child: TextFormField(
+                    controller: _phMaxCtrl,
+                    decoration: _inputDecoration("pH Max"),
+                    keyboardType: TextInputType.number,
+                  ),
+                ),
                 const SizedBox(width: 8),
-                Expanded(child: TextFormField(controller: _phIdealCtrl, decoration: _inputDecoration("pH Ideal"), keyboardType: TextInputType.number)),
+                Expanded(
+                  child: TextFormField(
+                    controller: _phIdealCtrl,
+                    decoration: _inputDecoration("pH Ideal"),
+                    keyboardType: TextInputType.number,
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 12),
-            const Text("Nutrisi (Vegetatif Awal)", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.grey)),
+            const Text(
+              "Nutrisi (Vegetatif Awal)",
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+                color: Colors.grey,
+              ),
+            ),
             const SizedBox(height: 8),
             Row(
               children: [
-                Expanded(child: TextFormField(controller: _tdsVegMinCtrl, decoration: _inputDecoration("Min PPM"), keyboardType: TextInputType.number)),
+                Expanded(
+                  child: TextFormField(
+                    controller: _tdsVegMinCtrl,
+                    decoration: _inputDecoration("Min PPM"),
+                    keyboardType: TextInputType.number,
+                  ),
+                ),
                 const SizedBox(width: 8),
-                Expanded(child: TextFormField(controller: _tdsVegMaxCtrl, decoration: _inputDecoration("Max PPM"), keyboardType: TextInputType.number)),
+                Expanded(
+                  child: TextFormField(
+                    controller: _tdsVegMaxCtrl,
+                    decoration: _inputDecoration("Max PPM"),
+                    keyboardType: TextInputType.number,
+                  ),
+                ),
                 const SizedBox(width: 8),
-                Expanded(child: TextFormField(controller: _tdsVegIdealCtrl, decoration: _inputDecoration("Ideal PPM"), keyboardType: TextInputType.number)),
+                Expanded(
+                  child: TextFormField(
+                    controller: _tdsVegIdealCtrl,
+                    decoration: _inputDecoration("Ideal PPM"),
+                    keyboardType: TextInputType.number,
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 12),
-            const Text("Nutrisi (Pembesaran)", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.grey)),
+            const Text(
+              "Nutrisi (Pembesaran)",
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+                color: Colors.grey,
+              ),
+            ),
             const SizedBox(height: 8),
             Row(
               children: [
-                Expanded(child: TextFormField(controller: _tdsPemMinCtrl, decoration: _inputDecoration("Min PPM"), keyboardType: TextInputType.number)),
+                Expanded(
+                  child: TextFormField(
+                    controller: _tdsPemMinCtrl,
+                    decoration: _inputDecoration("Min PPM"),
+                    keyboardType: TextInputType.number,
+                  ),
+                ),
                 const SizedBox(width: 8),
-                Expanded(child: TextFormField(controller: _tdsPemMaxCtrl, decoration: _inputDecoration("Max PPM"), keyboardType: TextInputType.number)),
+                Expanded(
+                  child: TextFormField(
+                    controller: _tdsPemMaxCtrl,
+                    decoration: _inputDecoration("Max PPM"),
+                    keyboardType: TextInputType.number,
+                  ),
+                ),
                 const SizedBox(width: 8),
-                Expanded(child: TextFormField(controller: _tdsPemIdealCtrl, decoration: _inputDecoration("Ideal PPM"), keyboardType: TextInputType.number)),
+                Expanded(
+                  child: TextFormField(
+                    controller: _tdsPemIdealCtrl,
+                    decoration: _inputDecoration("Ideal PPM"),
+                    keyboardType: TextInputType.number,
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 12),
             Row(
               children: [
-                Expanded(child: TextFormField(controller: _harvestDaysCtrl, decoration: _inputDecoration("Panen (Hari)"), keyboardType: TextInputType.number)),
+                Expanded(
+                  child: TextFormField(
+                    controller: _harvestDaysCtrl,
+                    decoration: _inputDecoration("Panen (Hari)"),
+                    keyboardType: TextInputType.number,
+                  ),
+                ),
                 const SizedBox(width: 8),
-                Expanded(child: TextFormField(controller: _harvestRangeCtrl, decoration: _inputDecoration("+- Range"), keyboardType: TextInputType.number)),
+                Expanded(
+                  child: TextFormField(
+                    controller: _harvestRangeCtrl,
+                    decoration: _inputDecoration("+- Range"),
+                    keyboardType: TextInputType.number,
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 16),
@@ -379,10 +531,14 @@ class _PlantSelectionPageState extends State<PlantSelectionPage> {
                 Checkbox(
                   value: _saveAsTemplate,
                   activeColor: const Color(0xff03AF55),
-                  onChanged: (v) => setState(() => _saveAsTemplate = v ?? false),
+                  onChanged: (v) =>
+                      setState(() => _saveAsTemplate = v ?? false),
                 ),
                 const Expanded(
-                  child: Text("Simpan sebagai Template untuk digunakan lagi nanti", style: TextStyle(fontSize: 12, color: Colors.grey)),
+                  child: Text(
+                    "Simpan sebagai Template untuk digunakan lagi nanti",
+                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
                 ),
               ],
             ),
@@ -414,20 +570,36 @@ class _PlantSelectionPageState extends State<PlantSelectionPage> {
     }
 
     if (assetPath != null) {
-      return Image.asset(assetPath,
-          height: 180, width: double.infinity, fit: BoxFit.cover);
+      return Image.asset(
+        assetPath,
+        height: 180,
+        width: double.infinity,
+        fit: BoxFit.cover,
+      );
     }
 
     if (commodity.imagePath.isNotEmpty) {
       if (commodity.imagePath.startsWith('http')) {
-        return Image.network(commodity.imagePath,
-            height: 180, width: double.infinity, fit: BoxFit.cover);
+        return Image.network(
+          commodity.imagePath,
+          height: 180,
+          width: double.infinity,
+          fit: BoxFit.cover,
+        );
       } else if (commodity.imagePath.startsWith('assets/')) {
-        return Image.asset(commodity.imagePath,
-            height: 180, width: double.infinity, fit: BoxFit.cover);
+        return Image.asset(
+          commodity.imagePath,
+          height: 180,
+          width: double.infinity,
+          fit: BoxFit.cover,
+        );
       } else {
-        return Image.file(File(commodity.imagePath),
-            height: 180, width: double.infinity, fit: BoxFit.cover);
+        return Image.file(
+          File(commodity.imagePath),
+          height: 180,
+          width: double.infinity,
+          fit: BoxFit.cover,
+        );
       }
     }
 
@@ -440,7 +612,6 @@ class _PlantSelectionPageState extends State<PlantSelectionPage> {
   }
 
   Widget _buildDatePicker() {
-
     return GestureDetector(
       onTap: () async {
         final picked = await showDatePicker(
@@ -491,7 +662,9 @@ class _PlantSelectionPageState extends State<PlantSelectionPage> {
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xff03AF55),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           elevation: 0,
         ),
         onPressed: selectedCommodity == null
@@ -502,7 +675,7 @@ class _PlantSelectionPageState extends State<PlantSelectionPage> {
                 // If Custom Plant, validate and save if needed
                 if (selectedCommodity!.name == "Tanaman Lainnya") {
                   if (!_formKey.currentState!.validate()) return;
-                  
+
                   final newCommodity = Commodity(
                     id: "custom_${DateTime.now().millisecondsSinceEpoch}",
                     name: _nameCtrl.text,
@@ -512,11 +685,15 @@ class _PlantSelectionPageState extends State<PlantSelectionPage> {
                     phMin: double.tryParse(_phMinCtrl.text) ?? 5.5,
                     phMax: double.tryParse(_phMaxCtrl.text) ?? 6.5,
                     phIdeal: _phIdealCtrl.text,
-                    tdsVegetatifMin: double.tryParse(_tdsVegMinCtrl.text) ?? 500,
-                    tdsVegetatifMax: double.tryParse(_tdsVegMaxCtrl.text) ?? 800,
+                    tdsVegetatifMin:
+                        double.tryParse(_tdsVegMinCtrl.text) ?? 500,
+                    tdsVegetatifMax:
+                        double.tryParse(_tdsVegMaxCtrl.text) ?? 800,
                     tdsVegetatifIdeal: _tdsVegIdealCtrl.text,
-                    tdsPembesaranMin: double.tryParse(_tdsPemMinCtrl.text) ?? 800,
-                    tdsPembesaranMax: double.tryParse(_tdsPemMaxCtrl.text) ?? 1200,
+                    tdsPembesaranMin:
+                        double.tryParse(_tdsPemMinCtrl.text) ?? 800,
+                    tdsPembesaranMax:
+                        double.tryParse(_tdsPemMaxCtrl.text) ?? 1200,
                     tdsPembesaranIdeal: _tdsPemIdealCtrl.text,
                     harvestDays: int.tryParse(_harvestDaysCtrl.text) ?? 30,
                     harvestRange: int.tryParse(_harvestRangeCtrl.text) ?? 5,
@@ -524,33 +701,39 @@ class _PlantSelectionPageState extends State<PlantSelectionPage> {
 
                   if (_saveAsTemplate) {
                     await _commodityService.createCommodity(newCommodity);
+                    if (!mounted) return;
                   }
                   plantToStart = newCommodity;
                 }
 
                 // Start the cycle via PlantProvider
                 await context.read<PlantProvider>().startNewCycle(
-                      name: plantToStart!.name,
-                      startDate: selectedDate,
-                      targetPhMin: plantToStart.phMin,
-                      targetPhMax: plantToStart.phMax,
-                      targetTdsVegetatifMin: plantToStart.tdsVegetatifMin,
-                      targetTdsVegetatifMax: plantToStart.tdsVegetatifMax,
-                      targetTdsPembesaranMin: plantToStart.tdsPembesaranMin,
-                      targetTdsPembesaranMax: plantToStart.tdsPembesaranMax,
-                      harvestDays: plantToStart.harvestDays,
-                    );
-                    
-                if (context.mounted) {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (context) => const BottomNav()),
-                  );
-                }
+                  name: plantToStart!.name,
+                  startDate: selectedDate,
+                  targetPhMin: plantToStart.phMin,
+                  targetPhMax: plantToStart.phMax,
+                  targetTdsVegetatifMin: plantToStart.tdsVegetatifMin,
+                  targetTdsVegetatifMax: plantToStart.tdsVegetatifMax,
+                  targetTdsPembesaranMin: plantToStart.tdsPembesaranMin,
+                  targetTdsPembesaranMax: plantToStart.tdsPembesaranMax,
+                  harvestDays: plantToStart.harvestDays,
+                );
+
+                if (!mounted) return;
+
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const BottomNav()),
+                );
               },
         child: const Text(
           "MULAI MONITORING",
-          style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: Colors.white, letterSpacing: 1),
+          style: TextStyle(
+            fontWeight: FontWeight.w900,
+            fontSize: 16,
+            color: Colors.white,
+            letterSpacing: 1,
+          ),
         ),
       ),
     );

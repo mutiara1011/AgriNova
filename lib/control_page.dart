@@ -7,8 +7,6 @@ import 'providers/plant_provider.dart';
 import 'dart:async';
 import '../notification/notification_controller.dart';
 import '../notification/notification_widget.dart';
-import 'package:agrinova/models/plant_cycle.dart';
-
 
 class ControlPage extends StatefulWidget {
   const ControlPage({super.key});
@@ -41,15 +39,19 @@ class _ControlPageState extends State<ControlPage> {
     });
     timer = Timer.periodic(const Duration(seconds: 3), (_) {
       if (!mounted) return;
-      
+
       // Fetch calibration data to keep toggles in sync with Web client
-      context.read<CalibrationProvider>().fetchCalibrationData(showLoading: false);
-      
+      context.read<CalibrationProvider>().fetchCalibrationData(
+        showLoading: false,
+      );
+
       final plant = context.read<PlantProvider>().activePlant;
       if (plant != null) {
         final phase = context.read<PlantProvider>().selectedPhase;
         setState(() {
-          tdsValue = phase == "Vegetatif" ? plant.targetTdsVegetatifMax : plant.targetTdsPembesaranMax;
+          tdsValue = phase == "Vegetatif"
+              ? plant.targetTdsVegetatifMax
+              : plant.targetTdsPembesaranMax;
           suhuTarget = 28; // Default target
         });
       }
@@ -76,7 +78,11 @@ class _ControlPageState extends State<ControlPage> {
         centerTitle: true,
         title: const Text(
           'KONTROL SISTEM',
-          style: TextStyle(fontWeight: FontWeight.w900, fontSize: 20, letterSpacing: 0.5),
+          style: TextStyle(
+            fontWeight: FontWeight.w900,
+            fontSize: 20,
+            letterSpacing: 0.5,
+          ),
         ),
       ),
       body: RefreshIndicator(
@@ -89,7 +95,12 @@ class _ControlPageState extends State<ControlPage> {
         color: const Color(0xff03AF55),
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: EdgeInsets.fromLTRB(16, MediaQuery.of(context).padding.top + 70, 16, 120),
+          padding: EdgeInsets.fromLTRB(
+            16,
+            MediaQuery.of(context).padding.top + 70,
+            16,
+            120,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -103,18 +114,35 @@ class _ControlPageState extends State<ControlPage> {
                   children: [
                     Container(
                       padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(color: const Color(0xff03AF55).withValues(alpha: 0.2), shape: BoxShape.circle),
-                      child: const Icon(Icons.psychology, color: Color(0xff03AF55), size: 24),
+                      decoration: BoxDecoration(
+                        color: const Color(0xff03AF55).withValues(alpha: 0.2),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.psychology,
+                        color: Color(0xff03AF55),
+                        size: 24,
+                      ),
                     ),
                     const SizedBox(width: 16),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text("Analisis Fuzzy", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14)),
+                          const Text(
+                            "Analisis Fuzzy",
+                            style: TextStyle(
+                              fontWeight: FontWeight.w900,
+                              fontSize: 14,
+                            ),
+                          ),
                           Text(
                             fuzzy.rekomendasi,
-                            style: TextStyle(fontSize: 13, color: Colors.grey.shade700, fontWeight: FontWeight.w600),
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey.shade700,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ],
                       ),
@@ -142,7 +170,12 @@ class _ControlPageState extends State<ControlPage> {
       padding: const EdgeInsets.only(left: 8),
       child: Text(
         title.toUpperCase(),
-        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: Colors.grey.shade500, letterSpacing: 1),
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w900,
+          color: Colors.grey.shade500,
+          letterSpacing: 1,
+        ),
       ),
     );
   }
@@ -218,15 +251,33 @@ class _ControlPageState extends State<ControlPage> {
     );
   }
 
-  Widget _switchTile(String title, bool value, Function(bool) onChanged, bool disabled, bool isOverride, IconData icon) {
+  Widget _switchTile(
+    String title,
+    bool value,
+    Function(bool) onChanged,
+    bool disabled,
+    bool isOverride,
+    IconData icon,
+  ) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 4, 8, 4),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(color: (value && !disabled) ? const Color(0xff03AF55).withValues(alpha: 0.1) : Colors.grey.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
-            child: Icon(icon, size: 20, color: (value && !disabled) ? const Color(0xff03AF55) : Colors.grey),
+            decoration: BoxDecoration(
+              color: (value && !disabled)
+                  ? const Color(0xff03AF55).withValues(alpha: 0.1)
+                  : Colors.grey.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              icon,
+              size: 20,
+              color: (value && !disabled)
+                  ? const Color(0xff03AF55)
+                  : Colors.grey,
+            ),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -235,9 +286,21 @@ class _ControlPageState extends State<ControlPage> {
               children: [
                 Text(
                   title,
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: disabled ? Colors.grey : null),
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: disabled ? Colors.grey : null,
+                  ),
                 ),
-                if (isOverride) const Text("Override Aktif", style: TextStyle(fontSize: 10, color: Colors.orange, fontWeight: FontWeight.w800)),
+                if (isOverride)
+                  const Text(
+                    "Override Aktif",
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: Colors.orange,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
               ],
             ),
           ),
@@ -252,9 +315,6 @@ class _ControlPageState extends State<ControlPage> {
       ),
     );
   }
-
-
-
 
   Widget _warningCard(BuildContext context) {
     final notif = context.watch<NotificationController>();

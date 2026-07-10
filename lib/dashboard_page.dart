@@ -660,10 +660,10 @@ class _DashboardPageState extends State<DashboardPage> {
               name.toLowerCase().contains("kangkung")
                   ? 'assets/images/kangkung.png'
                   : name.toLowerCase().contains("pakcoy")
-                      ? 'assets/images/pakcoy.png'
-                      : name.toLowerCase().contains("selada")
-                          ? 'assets/images/selada.png'
-                          : 'assets/images/selada_romaine.jpg',
+                  ? 'assets/images/pakcoy.png'
+                  : name.toLowerCase().contains("selada")
+                  ? 'assets/images/selada.png'
+                  : 'assets/images/selada_romaine.jpg',
             ),
             fit: BoxFit.cover,
             colorFilter: ColorFilter.mode(
@@ -671,7 +671,6 @@ class _DashboardPageState extends State<DashboardPage> {
               BlendMode.darken,
             ),
           ),
-
         ),
         child: Container(
           decoration: BoxDecoration(
@@ -725,13 +724,17 @@ class _DashboardPageState extends State<DashboardPage> {
                     Row(
                       children: [
                         Icon(
-                          fuzzy.isFuzzyEnabled ? Icons.psychology_outlined : Icons.do_not_disturb_on_outlined,
+                          fuzzy.isFuzzyEnabled
+                              ? Icons.psychology_outlined
+                              : Icons.do_not_disturb_on_outlined,
                           color: Colors.white60,
                           size: 14,
                         ),
                         const SizedBox(width: 6),
                         Text(
-                          fuzzy.isFuzzyEnabled ? "FUZZY MAMDANI ACTIVE" : "SISTEM OTOMATIS NONAKTIF",
+                          fuzzy.isFuzzyEnabled
+                              ? "FUZZY MAMDANI ACTIVE"
+                              : "SISTEM OTOMATIS NONAKTIF",
                           style: const TextStyle(
                             color: Colors.white60,
                             fontSize: 10,
@@ -1077,7 +1080,6 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-
   Widget _chartSlider(BuildContext context, SensorProvider sensor) {
     final data = sensor.latestData;
     final history = sensor.historyData;
@@ -1285,14 +1287,17 @@ class _DashboardPageState extends State<DashboardPage> {
                       // Only show labels for every ~20% of data to avoid crowding
                       int interval = (history.length / 4).ceil();
                       if (interval < 1) interval = 1;
-                      
-                      if (idx < 0 || idx >= history.length || idx % interval != 0) {
+
+                      if (idx < 0 ||
+                          idx >= history.length ||
+                          idx % interval != 0) {
                         return const SizedBox();
                       }
 
                       // Avoid showing the very last label if it's too close to the end
-                      if (idx > history.length - (interval / 2) && idx != history.length - 1) {
-                         return const SizedBox();
+                      if (idx > history.length - (interval / 2) &&
+                          idx != history.length - 1) {
+                        return const SizedBox();
                       }
 
                       final time = history[idx].createdAt ?? DateTime.now();
@@ -1396,7 +1401,9 @@ class _DashboardPageState extends State<DashboardPage> {
             ),
             const SizedBox(height: 4),
             Text(
-              fuzzy.isFuzzyEnabled ? fuzzy.rekomendasi.toUpperCase() : "NON-AKTIF",
+              fuzzy.isFuzzyEnabled
+                  ? fuzzy.rekomendasi.toUpperCase()
+                  : "NON-AKTIF",
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 20, // Reduced from 26 to fit longer text
@@ -1442,8 +1449,14 @@ class _DashboardPageState extends State<DashboardPage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _fuzzyInfo(Icons.opacity, "${fuzzy.ph.toStringAsFixed(1)} (${fuzzy.statusPh})"),
-                _fuzzyInfo(Icons.science_outlined, "${fuzzy.tds.toStringAsFixed(0)} PPM"),
+                _fuzzyInfo(
+                  Icons.opacity,
+                  "${fuzzy.ph.toStringAsFixed(1)} (${fuzzy.statusPh})",
+                ),
+                _fuzzyInfo(
+                  Icons.science_outlined,
+                  "${fuzzy.tds.toStringAsFixed(0)} PPM",
+                ),
                 _fuzzyInfo(
                   Icons.bolt,
                   "${fuzzy.outputPompa.toStringAsFixed(1)}%",

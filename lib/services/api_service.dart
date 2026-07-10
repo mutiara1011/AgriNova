@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/sensor_data.dart';
 import '../models/calibration_data.dart';
+import 'package:flutter/foundation.dart';
 
 class ApiService {
   static const String baseUrl = 'https://agrinova.devlabfortirta.cloud/api/v1';
@@ -13,25 +14,32 @@ class ApiService {
     try {
       var url = '$baseUrl/sensors/latest?deviceId=$deviceId';
       if (t != null) url += '&t=$t';
-      
+
       final response = await http
           .get(Uri.parse(url))
           .timeout(const Duration(seconds: 10));
-      
+
       if (response.statusCode == 200) {
         final json = jsonDecode(response.body);
         return SensorData.fromJson(json['data'] ?? json);
       }
     } catch (e) {
-      print('Error getLatestSensorData: $e');
+      debugPrint('Error getLatestSensorData: $e');
     }
     return null;
   }
 
-  Future<List<SensorData>> getSensorHistory({int page = 1, int limit = 20}) async {
+  Future<List<SensorData>> getSensorHistory({
+    int page = 1,
+    int limit = 20,
+  }) async {
     try {
       final response = await http
-          .get(Uri.parse('$baseUrl/sensors/history?deviceId=$deviceId&page=$page&limit=$limit'))
+          .get(
+            Uri.parse(
+              '$baseUrl/sensors/history?deviceId=$deviceId&page=$page&limit=$limit',
+            ),
+          )
           .timeout(const Duration(seconds: 10));
       if (response.statusCode == 200) {
         final json = jsonDecode(response.body);
@@ -40,16 +48,20 @@ class ApiService {
         return list.map((i) => SensorData.fromJson(i)).toList();
       }
     } catch (e) {
-      print('Error getSensorHistory: $e');
+      debugPrint('Error getSensorHistory: $e');
     }
     return [];
   }
 
-  Future<Map<String, dynamic>> getSensorAnalysis({String timeRange = '1d', String? endDate}) async {
+  Future<Map<String, dynamic>> getSensorAnalysis({
+    String timeRange = '1d',
+    String? endDate,
+  }) async {
     try {
-      var url = '$baseUrl/sensors/analysis?deviceId=$deviceId&timeRange=$timeRange';
+      var url =
+          '$baseUrl/sensors/analysis?deviceId=$deviceId&timeRange=$timeRange';
       if (endDate != null) url += '&endDate=$endDate';
-      
+
       final response = await http
           .get(Uri.parse(url))
           .timeout(const Duration(seconds: 10));
@@ -57,7 +69,7 @@ class ApiService {
         return jsonDecode(response.body);
       }
     } catch (e) {
-      print('Error getSensorAnalysis: $e');
+      debugPrint('Error getSensorAnalysis: $e');
     }
     return {};
   }
@@ -74,73 +86,85 @@ class ApiService {
         return CalibrationData.fromJson(json['data'] ?? json);
       }
     } catch (e) {
-      print('Error getCalibrationData: $e');
+      debugPrint('Error getCalibrationData: $e');
     }
     return null;
   }
 
-  Future<bool> updateCalibration({required double waterTempManual, required double waterTempSensor, required double tdsManual, required double tdsSensor}) async {
+  Future<bool> updateCalibration({
+    required double waterTempManual,
+    required double waterTempSensor,
+    required double tdsManual,
+    required double tdsSensor,
+  }) async {
     try {
-      final response = await http.put(
-        Uri.parse('$baseUrl/calibration'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          "deviceId": deviceId,
-          "waterTempManual": waterTempManual,
-          "waterTempSensor": waterTempSensor,
-          "tdsManual": tdsManual,
-          "tdsSensor": tdsSensor,
-        }),
-      ).timeout(const Duration(seconds: 10));
+      final response = await http
+          .put(
+            Uri.parse('$baseUrl/calibration'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              "deviceId": deviceId,
+              "waterTempManual": waterTempManual,
+              "waterTempSensor": waterTempSensor,
+              "tdsManual": tdsManual,
+              "tdsSensor": tdsSensor,
+            }),
+          )
+          .timeout(const Duration(seconds: 10));
       return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {
-      print('Error updateCalibration: $e');
+      debugPrint('Error updateCalibration: $e');
       return false;
     }
   }
 
   Future<bool> toggleLiveMode(bool liveModeActive) async {
     try {
-      final response = await http.put(
-        Uri.parse('$baseUrl/calibration/live-mode'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          "deviceId": deviceId,
-          "liveModeActive": liveModeActive,
-        }),
-      ).timeout(const Duration(seconds: 10));
+      final response = await http
+          .put(
+            Uri.parse('$baseUrl/calibration/live-mode'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              "deviceId": deviceId,
+              "liveModeActive": liveModeActive,
+            }),
+          )
+          .timeout(const Duration(seconds: 10));
       return response.statusCode == 200;
     } catch (e) {
-      print('Error toggleLiveMode: $e');
+      debugPrint('Error toggleLiveMode: $e');
       return false;
     }
   }
 
   Future<bool> toggleMuteBuzzer(bool muteBuzzer) async {
     try {
-      final response = await http.put(
-        Uri.parse('$baseUrl/calibration/mute-buzzer'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          "deviceId": deviceId,
-          "muteBuzzer": muteBuzzer,
-        }),
-      ).timeout(const Duration(seconds: 10));
+      final response = await http
+          .put(
+            Uri.parse('$baseUrl/calibration/mute-buzzer'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({"deviceId": deviceId, "muteBuzzer": muteBuzzer}),
+          )
+          .timeout(const Duration(seconds: 10));
       return response.statusCode == 200;
     } catch (e) {
-      print('Error toggleMuteBuzzer: $e');
+      debugPrint('Error toggleMuteBuzzer: $e');
       return false;
     }
   }
 
   Future<bool> resetTdsPoints() async {
     try {
-      final response = await http.delete(
-        Uri.parse('$baseUrl/calibration/tds-points?deviceId=$deviceId'), // Also passing deviceId just in case
-      ).timeout(const Duration(seconds: 10));
+      final response = await http
+          .delete(
+            Uri.parse(
+              '$baseUrl/calibration/tds-points?deviceId=$deviceId',
+            ), // Also passing deviceId just in case
+          )
+          .timeout(const Duration(seconds: 10));
       return response.statusCode == 200;
     } catch (e) {
-      print('Error resetTdsPoints: $e');
+      debugPrint('Error resetTdsPoints: $e');
       return false;
     }
   }
@@ -157,7 +181,7 @@ class ApiService {
         return json['data'];
       }
     } catch (e) {
-      print('Error getActivePlantCycle: $e');
+      debugPrint('Error getActivePlantCycle: $e');
     }
     return null;
   }
@@ -174,42 +198,43 @@ class ApiService {
     required int harvestDays,
   }) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/plants/start'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          "deviceId": deviceId,
-          "name": name,
-          "startDate": startDate.toIso8601String(),
-          "targetPhMin": targetPhMin,
-          "targetPhMax": targetPhMax,
-          "targetTdsVegetatifMin": targetTdsVegetatifMin,
-          "targetTdsVegetatifMax": targetTdsVegetatifMax,
-          "targetTdsPembesaranMin": targetTdsPembesaranMin,
-          "targetTdsPembesaranMax": targetTdsPembesaranMax,
-          "harvestDays": harvestDays,
-        }),
-      ).timeout(const Duration(seconds: 10));
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/plants/start'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              "deviceId": deviceId,
+              "name": name,
+              "startDate": startDate.toIso8601String(),
+              "targetPhMin": targetPhMin,
+              "targetPhMax": targetPhMax,
+              "targetTdsVegetatifMin": targetTdsVegetatifMin,
+              "targetTdsVegetatifMax": targetTdsVegetatifMax,
+              "targetTdsPembesaranMin": targetTdsPembesaranMin,
+              "targetTdsPembesaranMax": targetTdsPembesaranMax,
+              "harvestDays": harvestDays,
+            }),
+          )
+          .timeout(const Duration(seconds: 10));
       return response.statusCode == 201 || response.statusCode == 200;
     } catch (e) {
-      print('Error startPlantCycle: $e');
+      debugPrint('Error startPlantCycle: $e');
       return false;
     }
   }
 
   Future<bool> endPlantCycle({String notes = ""}) async {
     try {
-      final response = await http.put(
-        Uri.parse('$baseUrl/plants/end'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          "deviceId": deviceId,
-          "notes": notes,
-        }),
-      ).timeout(const Duration(seconds: 10));
+      final response = await http
+          .put(
+            Uri.parse('$baseUrl/plants/end'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({"deviceId": deviceId, "notes": notes}),
+          )
+          .timeout(const Duration(seconds: 10));
       return response.statusCode == 200;
     } catch (e) {
-      print('Error endPlantCycle: $e');
+      debugPrint('Error endPlantCycle: $e');
       return false;
     }
   }
@@ -217,14 +242,18 @@ class ApiService {
   Future<List<dynamic>> getPlantHistory({int page = 1, int limit = 10}) async {
     try {
       final response = await http
-          .get(Uri.parse('$baseUrl/plants/history?deviceId=$deviceId&page=$page&limit=$limit'))
+          .get(
+            Uri.parse(
+              '$baseUrl/plants/history?deviceId=$deviceId&page=$page&limit=$limit',
+            ),
+          )
           .timeout(const Duration(seconds: 10));
       if (response.statusCode == 200) {
         final json = jsonDecode(response.body);
         return json['data']['cycles'] ?? [];
       }
     } catch (e) {
-      print('Error getPlantHistory: $e');
+      debugPrint('Error getPlantHistory: $e');
     }
     return [];
   }

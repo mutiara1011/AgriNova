@@ -53,7 +53,7 @@ class PlantCycle {
       name: json['name'],
       startDate: DateTime.parse(json['startDate']),
       endDate: json['endDate'] != null ? DateTime.parse(json['endDate']) : null,
-      isActive: json['isActive'],
+      isActive: json['isActive'] ?? true,
       targetPhMin: json['targetPhMin']?.toDouble() ?? 5.5,
       targetPhMax: json['targetPhMax']?.toDouble() ?? 6.5,
       targetTdsVegetatifMin: json['targetTdsVegetatifMin']?.toDouble() ?? 500,
@@ -82,6 +82,7 @@ class PlantCycle {
     double? targetTdsVegetatifMax,
     double? targetTdsPembesaranMin,
     double? targetTdsPembesaranMax,
+    int? harvestDays,
     List<SensorData>? historyData,
   }) {
     return PlantCycle(
