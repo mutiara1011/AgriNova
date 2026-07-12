@@ -26,7 +26,7 @@ class CalibrationData {
   });
 
   factory CalibrationData.fromJson(Map<String, dynamic> json) {
-    var list = json['tdsPoints'] as List? ?? [];
+    var list = (json['tdsCalibrationPoints'] ?? json['tdsPoints']) as List? ?? [];
     List<TdsPoint> pointsList = list.map((i) => TdsPoint.fromJson(i)).toList();
 
     return CalibrationData(

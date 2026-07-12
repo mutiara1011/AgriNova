@@ -110,6 +110,7 @@ class PlantProvider extends ChangeNotifier {
       return FuzzyThresholds(
         phLimits: [5.5, 6.0, 7.0, 7.5],
         tdsLimits: [560, 700],
+        tempLimits: [18, 30],
       );
     }
 
@@ -140,6 +141,21 @@ class PlantProvider extends ChangeNotifier {
     }
     List<double> tdsLimits = [tdsMin, tdsMax];
 
-    return FuzzyThresholds(phLimits: phLimits, tdsLimits: tdsLimits);
+    // Suhu Air: Dinamis per komoditas (Sesuai Tabel 6 Skripsi)
+    // Kangkung & Sawi: 18-30°C, Selada Keriting: 27-31°C
+    List<double> tempLimits;
+    final nameLower = p.name.toLowerCase();
+    if (nameLower.contains('selada')) {
+      tempLimits = [27, 31];
+    } else {
+      // Default untuk Kangkung, Sawi, dan komoditas lainnya
+      tempLimits = [18, 30];
+    }
+
+    return FuzzyThresholds(
+      phLimits: phLimits,
+      tdsLimits: tdsLimits,
+      tempLimits: tempLimits,
+    );
   }
 }

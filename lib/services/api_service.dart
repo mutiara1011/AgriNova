@@ -5,7 +5,7 @@ import '../models/calibration_data.dart';
 import 'package:flutter/foundation.dart';
 
 class ApiService {
-  static const String baseUrl = 'https://agrinova.devlabfortirta.cloud/api/v1';
+  static const String baseUrl = 'https://agrinova.devlabfortirta.my.id/api/v1';
   static const String deviceId = 'AgriNova-Node-01';
 
   // --- SENSORS API ---
@@ -157,9 +157,9 @@ class ApiService {
     try {
       final response = await http
           .delete(
-            Uri.parse(
-              '$baseUrl/calibration/tds-points?deviceId=$deviceId',
-            ), // Also passing deviceId just in case
+            Uri.parse('$baseUrl/calibration/tds-points'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({"deviceId": deviceId}),
           )
           .timeout(const Duration(seconds: 10));
       return response.statusCode == 200;

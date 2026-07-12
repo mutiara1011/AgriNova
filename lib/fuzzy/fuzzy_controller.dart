@@ -299,6 +299,7 @@ class FuzzyController extends ChangeNotifier {
     final thresholds = plantProvider.currentThresholds;
     final phL = thresholds.phLimits; // [a, b, c, d]
     final tdsL = thresholds.tdsLimits; // [low, high]
+    final tempL = thresholds.tempLimits; // [tempMin, tempMax]
 
     // =========================================================================
     // 1. FUZZIFIKASI INPUTS (Mencari Derajat Keanggotaan / µ)
@@ -339,65 +340,79 @@ class FuzzyController extends ChangeNotifier {
     }
 
     // --- TDS Fuzzification (Rendah/Normal/Tinggi) ---
-    double tdsLow30 = tdsL[0] + (tdsL[1] - tdsL[0]) * 0.3; // batas bawah plateau Normal
-    double tdsHigh70 = tdsL[0] + (tdsL[1] - tdsL[0]) * 0.7; // batas atas plateau Normal
+    // Offset tetap: 50 PPM jika tdsMin < 600, 100 PPM jika >= 600
+    double tdsOffset = tdsL[0] >= 600 ? 100 : 50;
+    double tdsMidLow = tdsL[0] + tdsOffset; // batas bawah plateau Normal
+    double tdsMidHigh = tdsL[1] - tdsOffset; // batas atas plateau Normal
+    // Jika range terlalu kecil, midLow dan midHigh bisa overlap
+    if (tdsMidLow >= tdsMidHigh) {
+      tdsMidLow = (tdsL[0] + tdsL[1]) / 2;
+      tdsMidHigh = tdsMidLow;
+    }
 
-    // TDS Rendah (turun ke 0 di batas bawah plateau Normal)
+    // TDS Rendah: µ=1 saat TDS ≤ tdsMin, turun linear sampai µ=0 saat TDS >= tdsMidLow
     if (tds <= tdsL[0]) {
       muTdsRendah = 1;
-    } else if (tds > tdsL[0] && tds < tdsLow30) {
-      muTdsRendah = (tdsLow30 - tds) / (tdsLow30 - tdsL[0]);
+    } else if (tds > tdsL[0] && tds < tdsMidLow) {
+      muTdsRendah = (tdsMidLow - tds) / (tdsMidLow - tdsL[0]);
     } else {
       muTdsRendah = 0;
     }
 
-    // TDS Normal (Trapezoid: flat plateau di 30%-70% range)
-    if (tds >= tdsLow30 && tds <= tdsHigh70) {
+    // TDS Normal: Trapezoid — naik tdsMin→tdsMidLow, flat tdsMidLow→tdsMidHigh, turun tdsMidHigh→tdsMax
+    if (tds >= tdsMidLow && tds <= tdsMidHigh) {
       muTdsNormal = 1;
-    } else if (tds > tdsL[0] && tds < tdsLow30) {
-      muTdsNormal = (tds - tdsL[0]) / (tdsLow30 - tdsL[0]);
-    } else if (tds > tdsHigh70 && tds < tdsL[1]) {
-      muTdsNormal = (tdsL[1] - tds) / (tdsL[1] - tdsHigh70);
+    } else if (tds > tdsL[0] && tds < tdsMidLow) {
+      muTdsNormal = (tds - tdsL[0]) / (tdsMidLow - tdsL[0]);
+    } else if (tds > tdsMidHigh && tds < tdsL[1]) {
+      muTdsNormal = (tdsL[1] - tds) / (tdsL[1] - tdsMidHigh);
     } else {
       muTdsNormal = 0;
     }
 
-    // TDS Tinggi (mulai naik dari batas atas plateau)
+    // TDS Tinggi: µ=0 saat TDS ≤ tdsMidHigh, naik linear sampai µ=1 saat TDS >= tdsMax
     if (tds >= tdsL[1]) {
       muTdsTinggi = 1;
-    } else if (tds > tdsHigh70 && tds < tdsL[1]) {
-      muTdsTinggi = (tds - tdsHigh70) / (tdsL[1] - tdsHigh70);
+    } else if (tds > tdsMidHigh && tds < tdsL[1]) {
+      muTdsTinggi = (tds - tdsMidHigh) / (tdsL[1] - tdsMidHigh);
     } else {
       muTdsTinggi = 0;
     }
 
     // --- Suhu Air Fuzzification (Dingin/Normal/Panas) ---
-    // Dikalibrasi khusus untuk iklim tropis rumah user di mana suhu air 28°C s.d. 31°C dianggap Normal/Optimal bagi tanaman.
-    // Dingin (<24°C - 27°C)
-    if (waterTemp <= 24) {
+    // Dinamis per komoditas sesuai Tabel 6 Skripsi.
+    // tempL[0] = batas bawah optimal, tempL[1] = batas atas optimal
+    // Offset ±3°C untuk lereng transisi.
+    double tempMin = tempL[0];     // e.g. 18°C (Kangkung) atau 27°C (Selada)
+    double tempMax = tempL[1];     // e.g. 30°C (Kangkung) atau 31°C (Selada)
+    double tempLowStart = tempMin - 3;  // e.g. 15°C atau 24°C
+    double tempHighEnd = tempMax + 3;   // e.g. 33°C atau 34°C
+
+    // Dingin: µ=1 saat suhu ≤ tempLowStart, turun linear sampai µ=0 saat suhu >= tempMin
+    if (waterTemp <= tempLowStart) {
       muSuhuDingin = 1;
-    } else if (waterTemp > 24 && waterTemp < 27) {
-      muSuhuDingin = (27 - waterTemp) / (27 - 24);
+    } else if (waterTemp > tempLowStart && waterTemp < tempMin) {
+      muSuhuDingin = (tempMin - waterTemp) / (tempMin - tempLowStart);
     } else {
       muSuhuDingin = 0;
     }
 
-    // Normal (Optimal: 24°C - 33°C, optimal rata di 27°C - 31°C)
-    if (waterTemp >= 27 && waterTemp <= 31) {
+    // Normal: Trapesium — flat di tempMin s.d. tempMax
+    if (waterTemp >= tempMin && waterTemp <= tempMax) {
       muSuhuNormal = 1;
-    } else if (waterTemp > 24 && waterTemp < 27) {
-      muSuhuNormal = (waterTemp - 24) / (27 - 24);
-    } else if (waterTemp > 31 && waterTemp < 33) {
-      muSuhuNormal = (33 - waterTemp) / (33 - 31);
+    } else if (waterTemp > tempLowStart && waterTemp < tempMin) {
+      muSuhuNormal = (waterTemp - tempLowStart) / (tempMin - tempLowStart);
+    } else if (waterTemp > tempMax && waterTemp < tempHighEnd) {
+      muSuhuNormal = (tempHighEnd - waterTemp) / (tempHighEnd - tempMax);
     } else {
       muSuhuNormal = 0;
     }
 
-    // Panas (>31°C - 33°C)
-    if (waterTemp >= 33) {
+    // Panas: µ=0 saat suhu ≤ tempMax, naik linear sampai µ=1 saat suhu >= tempHighEnd
+    if (waterTemp >= tempHighEnd) {
       muSuhuPanas = 1;
-    } else if (waterTemp > 31 && waterTemp < 33) {
-      muSuhuPanas = (waterTemp - 31) / (33 - 31);
+    } else if (waterTemp > tempMax && waterTemp < tempHighEnd) {
+      muSuhuPanas = (waterTemp - tempMax) / (tempHighEnd - tempMax);
     } else {
       muSuhuPanas = 0;
     }
@@ -427,7 +442,7 @@ class FuzzyController extends ChangeNotifier {
     r6 = _min(muPhTinggi, muSuhuDingin);
     // R7: IF pH Tinggi AND Suhu Optimal -> pH Down Tinggi (Bobot Singleton 1.0)
     r7 = _min(muPhTinggi, muSuhuNormal);
-    // R8: IF pH Tinggi AND Suhu Panas -> pH Down Rendah (Bobot Singleton 0.4)
+    // R8: IF pH Tinggi AND Suhu Panas -> pH Down Rendah (Bobot Singleton 0.3) — Sesuai Tabel 8 Skripsi
     r8 = _min(muPhTinggi, muSuhuPanas);
     // R9: IF pH Normal -> pH Down Mati (Bobot 0)
     r9 = muPhNormal;
@@ -435,14 +450,15 @@ class FuzzyController extends ChangeNotifier {
     r10 = muPhRendah;
 
     // =========================================================================
-    // 3. DEFUZZIFIKASI (Weighted Average / Rata-rata Terbobot)
+    // 3. DEFUZZIFIKASI — Metode Centroid / Center of Area (Persamaan 10 Skripsi)
     // =========================================================================
     // Catatan Akademis untuk Skripsi:
-    // Metode Defuzzifikasi yang digunakan adalah Weighted Average (Rata-rata Terbobot) dengan fungsi keanggotaan output
-    // berbentuk Singleton (konstan). Metode ini terbukti ekuivalen secara matematis dengan metode Mamdani klasik, 
-    // namun jauh lebih ringan dan efisien secara komputasi untuk dijalankan pada aplikasi mobile & IoT mikrokontroler.
+    // Rumus Centroid: z* = Σ(zi × μ(zi)) / Σ(μ(zi))
+    // Di mana zi = bobot singleton output, μ(zi) = firing strength (α-predicate).
+    // Metode ini ekuivalen dengan Weighted Average untuk fungsi keanggotaan output Singleton.
     
     // Fuzzy 1 AB Mix Scale Output (Skala 0.0 s.d. 1.0)
+    // Bobot: R1=Sedang(0.6), R2=Tinggi(1.0), R3=Rendah(0.3), R4=Mati(0), R5=Mati(0)
     double sumAB = r1 + r2 + r3 + r4 + r5;
     double scaleAB = 0.0;
     if (sumAB > 0) {
@@ -451,10 +467,11 @@ class FuzzyController extends ChangeNotifier {
     outputPompaTDS = scaleAB * 100.0; 
 
     // Fuzzy 2 pH Down Scale Output (Skala 0.0 s.d. 1.0)
+    // Bobot: R6=Sedang(0.6), R7=Tinggi(1.0), R8=Rendah(0.3), R9=Mati(0), R10=Mati(0)
     double sumPH = r6 + r7 + r8 + r9 + r10;
     double scalePH = 0.0;
     if (sumPH > 0) {
-      scalePH = (r6 * 0.6 + r7 * 1.0 + r8 * 0.4 + r9 * 0.0 + r10 * 0.0) / sumPH;
+      scalePH = (r6 * 0.6 + r7 * 1.0 + r8 * 0.3 + r9 * 0.0 + r10 * 0.0) / sumPH;
     }
     outputPompaPH = scalePH * 100.0; 
 

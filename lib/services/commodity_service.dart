@@ -4,7 +4,7 @@ import '../models/commodity.dart';
 import 'package:flutter/foundation.dart';
 
 class CommodityService {
-  static const String baseUrl = 'https://agrinova.devlabfortirta.cloud/api/v1';
+  static const String baseUrl = 'https://agrinova.devlabfortirta.my.id/api/v1';
 
   Future<List<Commodity>> getAllCommodities() async {
     try {
