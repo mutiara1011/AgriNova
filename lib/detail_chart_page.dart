@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:agrinova/providers/sensor_provider.dart';
 import 'package:agrinova/models/sensor_data.dart';
-import 'package:agrinova/providers/plant_provider.dart';
 import 'package:intl/intl.dart';
 
 
@@ -60,11 +59,9 @@ class _DetailChartPageState extends State<DetailChartPage> {
     // Normalize ke akhir hari (23:59:59) agar backend menghitung mulai dari jam 00:00
     final endOfDay = DateTime(focusDate.year, focusDate.month, focusDate.day, 23, 59, 59);
     final endDateStr = endOfDay.toUtc().toIso8601String();
-    final plant = context.read<PlantProvider>().activePlant;
     context.read<SensorProvider>().fetchAnalysisData(
       timeRange: activeRange, 
       endDate: endDateStr,
-      startDate: plant?.startDate,
     );
   }
 

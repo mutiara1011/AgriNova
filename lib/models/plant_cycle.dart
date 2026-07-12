@@ -106,5 +106,9 @@ class PlantCycle {
     );
   }
 
-  int get hst => DateTime.now().difference(startDate).inDays + 1;
+  int get hst {
+    final end = endDate ?? DateTime.now();
+    final diff = end.difference(startDate).inDays;
+    return diff < 0 ? 0 : diff;
+  }
 }

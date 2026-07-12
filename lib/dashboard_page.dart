@@ -34,10 +34,7 @@ class _DashboardPageState extends State<DashboardPage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final plant = context.read<PlantProvider>().activePlant;
-      context.read<SensorProvider>().fetchHistoryData(
-        startDate: plant?.startDate,
-      );
+      context.read<SensorProvider>().fetchHistoryData();
     });
 
     slideTimer = Timer.periodic(const Duration(seconds: 5), (_) {
@@ -63,9 +60,8 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Future<void> _onRefresh() async {
     final provider = context.read<SensorProvider>();
-    final plant = context.read<PlantProvider>().activePlant;
     await provider.fetchLatestData();
-    await provider.fetchHistoryData(startDate: plant?.startDate);
+    await provider.fetchHistoryData();
   }
 
   @override

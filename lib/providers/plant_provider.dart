@@ -23,9 +23,8 @@ class PlantProvider extends ChangeNotifier {
   String get selectedPhase {
     if (_activePlant == null) return "Vegetatif";
     int hst = _activePlant!.hst;
-    // Dynamic transition: phase changes at 60% of total harvest duration
-    int transitionDay = (_activePlant!.harvestDays * 0.6).round();
-    return hst <= transitionDay ? "Vegetatif" : "Pembesaran";
+    double transitionDay = _activePlant!.harvestDays * 0.6;
+    return hst < transitionDay ? "Vegetatif" : "Pembesaran";
   }
 
   Future<void> loadData() async {
